@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Processor — PFE 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:        #0d0f14;
+            --surface:   #161920;
+            --panel:     #1e2230;
+            --border:    #2a2f3d;
+            --accent:    #5b8fff;
+            --accent2:   #00e5a0;
+            --accent3:   #ffb547;
+            --danger:    #ff5c7a;
+            --text:      #dde1f0;
+            --muted:     #6b728e;
+            --font-ui:   'Syne', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px 60px;
+        }
+
+        .container { width: 100%; max-width: 760px; }
+
+        /* Header */
+        .header { margin-bottom: 36px; }
+        .header-tag {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--accent2);
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .header h1 { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+        .header h1 span { color: var(--accent); }
+        .header p { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+        /* Card */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        /* Drop zone */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+            position: relative;
+        }
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: rgba(91,143,255,.05);
+        }
+        .drop-zone input[type="file"] {
+            position: absolute; inset: 0;
+            opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .drop-zone-icon { font-size: 32px; margin-bottom: 10px; }
+        .drop-zone-label { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .drop-zone-sub { font-size: 12px; color: var(--muted); }
+        .file-chosen {
+            margin-top: 10px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--accent2);
+        }
+
+        /* Mode grid — 4 columns */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            .mode-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .mode-btn {
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 8px;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+            text-align: center;
+            background: var(--panel);
+        }
+        .mode-btn:hover { border-color: var(--accent); }
+        .mode-btn.active {
+            border-color: var(--accent);
+            background: rgba(91,143,255,.12);
+        }
+        .mode-btn.active.table-mode {
+            border-color: var(--accent3);
+            background: rgba(255,181,71,.10);
+        }
+        .mode-btn input { display: none; }
+        .mode-icon { font-size: 20px; margin-bottom: 6px; }
+        .mode-name { font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px; }
+        .mode-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+        .mode-badge {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(91,143,255,.15);
+            color: var(--accent);
+        }
+        .mode-btn.active .mode-badge { background: var(--accent); color: #fff; }
+        .mode-btn.active.table-mode .mode-badge {
+            background: var(--accent3);
+            color: #000;
+        }
+
+        /* Section label */
+        .section-label {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--muted);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        /* Submit */
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: var(--font-ui);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .2s, transform .15s;
+            margin-top: 20px;
+        }
+        .submit-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+        .submit-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+        /* Progress */
+        .progress-wrap { display: none; margin-top: 20px; }
+        .progress-wrap.active { display: block; }
+        .progress-bar-bg { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            border-radius: 2px;
+            animation: progressAnim 2s ease-in-out infinite alternate;
+        }
+        @keyframes progressAnim { from { width: 20%; } to { width: 90%; } }
+        .progress-msg { font-size: 12px; font-family: var(--font-mono); color: var(--muted); margin-top: 8px; }
+
+        /* Result */
+        .result-card { display: none; }
+        .result-card.active { display: block; }
+
+        /* Stats */
+        .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .stat {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 16px;
+            flex: 1;
+            min-width: 100px;
+        }
+        .stat-label { font-size: 10px; font-family: var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+        .stat-value { font-size: 16px; font-weight: 700; }
+        .stat-value.accent  { color: var(--accent); }
+        .stat-value.success { color: var(--accent2); }
+        .stat-value.warning { color: var(--accent3); }
+
+        /* Pages chips */
+        .pages-line { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; align-items: center; }
+        .pages-line-label { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-right: 6px; }
+        .page-chip {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(91,143,255,.15);
+            color: var(--accent);
+            border: 1px solid rgba(91,143,255,.3);
+        }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .tab-btn {
+            padding: 7px 16px;
+            border-radius: 7px;
+            border: 1.5px solid var(--border);
+            background: var(--panel);
+            color: var(--muted);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .tab-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(91,143,255,.1); }
+        .tab-btn.table-tab.active { border-color: var(--accent3); color: var(--accent3); background: rgba(255,181,71,.1); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Content box */
+        .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .content-label { font-size: 11px; font-family: var(--font-mono); color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+        .copy-btn {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            border-radius: 5px;
+            padding: 3px 10px;
+            cursor: pointer;
+            transition: color .15s, border-color .15s;
+        }
+        .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .content-box {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+            max-height: 360px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            line-height: 1.75;
+            color: #c9cfe8;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .content-box::-webkit-scrollbar { width: 6px; }
+        .content-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* Tables display */
+        .tables-wrap { display: flex; flex-direction: column; gap: 20px; }
+        .table-card {
+            border: 1px solid rgba(255,181,71,.25);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .table-card-header {
+            background: rgba(255,181,71,.08);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-family: var(--font-mono);
+        }
+        .table-card-title { color: var(--accent3); font-weight: 600; }
+        .table-card-meta { color: var(--muted); font-size: 11px; }
+        .table-card-body { padding: 0; overflow-x: auto; }
+
+        table.extracted-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            font-family: var(--font-mono);
+        }
+        table.extracted-table th {
+            background: rgba(255,181,71,.12);
+            color: var(--accent3);
+            padding: 9px 14px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,181,71,.2);
+            white-space: nowrap;
+        }
+        table.extracted-table td {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            vertical-align: top;
+        }
+        table.extracted-table tr:last-child td { border-bottom: none; }
+        table.extracted-table tr:hover td { background: rgba(255,181,71,.04); }
+
+        .no-tables {
+            padding: 30px;
+            text-align: center;
+            color: var(--muted);
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+
+        /* Method badge */
+        .method-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            padding: 3px 8px;
+            border-radius: 5px;
+        }
+        .method-badge.native      { background: rgba(0,229,160,.12); color: var(--accent2); }
+        .method-badge.ocr         { background: rgba(255,92,122,.12); color: var(--danger); }
+        .method-badge.direct      { background: rgba(91,143,255,.12); color: var(--accent); }
+        .method-badge.pdfplumber  { background: rgba(91,143,255,.12); color: var(--accent); }
+        .method-badge.img2table   { background: rgba(255,181,71,.12); color: var(--accent3); }
+        .method-badge.gemini      { background: rgba(0,229,160,.12); color: var(--accent2); }
+
+        /* Error */
+        .error-card {
+            display: none;
+            background: rgba(255,92,122,.08);
+            border: 1px solid rgba(255,92,122,.3);
+            border-radius: 10px;
+            padding: 18px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--danger);
+            font-family: var(--font-mono);
+        }
+        .error-card.active { display: block; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <p class="header-tag">PFE 2026 · Document Intelligence</p>
+        <h1>Document <span>Processor</span></h1>
+        <p>Upload PDF, Word, Excel, HTML or Images — extract text or tables using smart mode selection.</p>
+    </div>
+
+    <div class="card">
+        <p class="section-label">01 · Select File</p>
+        <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput"
+                   accept=".pdf,.docx,.xlsx,.html,.htm,.png,.jpg,.jpeg,.gif,.bmp,.tiff,.webp"
+                   onchange="onFileChange(this)">
+            <div class="drop-zone-icon">📂</div>
+            <div class="drop-zone-label">Drop a file here or click to browse</div>
+            <div class="drop-zone-sub">PDF · DOCX · XLSX · HTML · PNG · JPG · Max 50 MB</div>
+            <div class="file-chosen" id="fileChosen"></div>
+        </div>
+
+        <div style="margin-top: 24px;">
+            <p class="section-label">02 · Extraction Mode</p>
+            <div class="mode-grid">
+                <label class="mode-btn active" id="btn-brief">
+                    <input type="radio" name="mode" value="brief" checked>
+                    <div class="mode-icon">⚡</div>
+                    <span class="mode-name">Brief</span>
+                    <span class="mode-desc">Title + first 2 pages</span>
+                    <span class="mode-badge">&lt; 5 s</span>
+                </label>
+                <label class="mode-btn" id="btn-summary">
+                    <input type="radio" name="mode" value="summary">
+                    <div class="mode-icon">📋</div>
+                    <span class="mode-name">Summary</span>
+                    <span class="mode-desc">First 5 + headers + last 2</span>
+                    <span class="mode-badge">&lt; 10 s</span>
+                </label>
+                <label class="mode-btn" id="btn-full">
+                    <input type="radio" name="mode" value="full">
+                    <div class="mode-icon">🗂️</div>
+                    <span class="mode-name">Full</span>
+                    <span class="mode-desc">All pages for RAG indexing</span>
+                    <span class="mode-badge">background</span>
+                </label>
+                <label class="mode-btn table-mode" id="btn-table">
+                    <input type="radio" name="mode" value="table">
+                    <div class="mode-icon">📊</div>
+                    <span class="mode-name">Tables</span>
+                    <span class="mode-desc">Extract all tables + context</span>
+                    <span class="mode-badge">factures · contrats</span>
+                </label>
+            </div>
+        </div>
+
+        <button class="submit-btn" id="submitBtn" onclick="doUpload()">
+            ↑ Upload &amp; Extract
+        </button>
+
+        <div class="progress-wrap" id="progressWrap">
+            <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
+            <p class="progress-msg" id="progressMsg">Processing...</p>
+        </div>
+    </div>
+
+    <div class="error-card" id="errorCard"></div>
+
+    <div class="result-card card" id="resultCard">
+        <p class="section-label">03 · Extraction Result</p>
+        <div class="stats" id="statsRow"></div>
+        <div class="pages-line" id="pagesLine"></div>
+
+        <!-- Tabs — only shown in table mode -->
+        <div class="tabs" id="tabsRow" style="display:none">
+            <button class="tab-btn active" onclick="switchTab('text')">📄 Text</button>
+            <button class="tab-btn table-tab" onclick="switchTab('tables')">📊 Tables</button>
+            <button class="tab-btn table-tab" onclick="switchTab('json')">{ } JSON</button>
+        </div>
+
+        <!-- Text tab -->
+        <div class="tab-panel active" id="tab-text">
+            <div class="content-header">
+                <span class="content-label">Extracted Text</span>
+                <button class="copy-btn" onclick="copyContent()">Copy</button>
+            </div>
+            <div class="content-box" id="contentBox"></div>
+        </div>
+
+        <!-- Tables tab -->
+        <div class="tab-panel" id="tab-tables">
+            <div class="tables-wrap" id="tablesWrap"></div>
+        </div>
+
+        <!-- JSON tab -->
+        <div class="tab-panel" id="tab-json">
+            <div class="content-header">
+                <span class="content-label">Tables as JSON</span>
+                <button class="copy-btn" onclick="copyJson()">Copy JSON</button>
+            </div>
+            <div class="content-box" id="jsonBox"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+/* ── Mode highlight ──────────────────────────── */
+document.querySelectorAll('input[name="mode"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        radio.closest('.mode-btn').classList.add('active');
+    });
+});
+
+/* ── Drag & drop ─────────────────────────────── */
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) {
+        const dt = new DataTransfer(); dt.items.add(f);
+        document.getElementById('fileInput').files = dt.files;
+        onFileChange(document.getElementById('fileInput'));
+    }
+});
+
+function onFileChange(input) {
+    const f = input.files[0];
+    document.getElementById('fileChosen').textContent =
+        f ? `✓ ${f.name} (${(f.size/1024).toFixed(1)} KB)` : '';
+}
+
+/* ── Upload ──────────────────────────────────── */
+const PROGRESS_MSGS = {
+    brief:   'Reading first pages...',
+    summary: 'Detecting section headers and extracting key pages...',
+    full:    'Processing all pages...',
+    table:   'Detecting and extracting tables...',
+};
+
+async function doUpload() {
+    const fileInput = document.getElementById('fileInput');
+    const mode      = document.querySelector('input[name="mode"]:checked').value;
+    if (!fileInput.files[0]) { alert('Please select a file first.'); return; }
+
+    hide('resultCard'); hide('errorCard');
+    show('progressWrap');
+    document.getElementById('progressMsg').textContent = PROGRESS_MSGS[mode];
+    document.getElementById('submitBtn').disabled = true;
+
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+    fd.append('mode', mode);
+
+    try {
+        const res  = await fetch('http://localhost:8000/documents/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        hide('progressWrap');
+        document.getElementById('submitBtn').disabled = false;
+
+        if (!res.ok || data.status === 'error') {
+            showError(data.detail || data.message || 'Unknown error');
+            return;
+        }
+        renderResult(data, mode);
+    } catch (err) {
+        hide('progressWrap');
+        document.getElementById('submitBtn').disabled = false;
+        showError('Could not reach the API — is the server running on localhost:8000?\n' + err.message);
+    }
+}
+
+/* ── Render ──────────────────────────────────── */
+let _currentTables = [];
+
+function renderResult(data, mode) {
+    const ex = data.extraction || {};
+    _currentTables = ex.tables || [];
+
+    // Stats
+    const method = ex.extraction_method || 'unknown';
+    let tablesStatHtml = '';
+    if (mode === 'table') {
+        tablesStatHtml = `
+        <div class="stat">
+            <div class="stat-label">Tables found</div>
+            <div class="stat-value warning">${ex.tables_found ?? 0}</div>
+        </div>`;
+    }
+
+    document.getElementById('statsRow').innerHTML = `
+        <div class="stat">
+            <div class="stat-label">File</div>
+            <div class="stat-value" style="font-size:12px">${esc(data.file_name)}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Mode</div>
+            <div class="stat-value accent">${data.mode}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Pages read</div>
+            <div class="stat-value">${ex.pages_read ?? '—'}<span style="color:var(--muted);font-size:12px"> / ${ex.pages_total ?? '—'}</span></div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Words</div>
+            <div class="stat-value success">${(ex.word_count ?? 0).toLocaleString()}</div>
+        </div>
+        ${tablesStatHtml}
+        <div class="stat">
+            <div class="stat-label">Time</div>
+            <div class="stat-value">${data.processing_time_ms ?? 0} ms</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Method</div>
+            <div class="stat-value"><span class="method-badge ${method.split('+')[0]}">${method}</span></div>
+        </div>`;
+
+    // Pages chips
+    const pages = ex.pages_selected || [];
+    document.getElementById('pagesLine').innerHTML = pages.length
+        ? `<span class="pages-line-label">Pages:</span>` + pages.map(p => `<span class="page-chip">p${p}</span>`).join('')
+        : '';
+
+    // Text content
+    document.getElementById('contentBox').textContent = ex.content || '(no content extracted)';
+
+    // Tabs — only in table mode
+    const tabsRow = document.getElementById('tabsRow');
+    if (mode === 'table') {
+        tabsRow.style.display = 'flex';
+        renderTables(_currentTables);
+        document.getElementById('jsonBox').textContent =
+            JSON.stringify(_currentTables.map(t => ({ page: t.page, table: t.table_index, data: t.json })), null, 2);
+        switchTab('tables');   // default to tables tab in table mode
+    } else {
+        tabsRow.style.display = 'none';
+        switchTab('text');
+    }
+
+    show('resultCard');
+}
+
+function renderTables(tables) {
+    const wrap = document.getElementById('tablesWrap');
+    if (!tables || tables.length === 0) {
+        wrap.innerHTML = `<div class="no-tables">⚠️ No tables detected in this document.</div>`;
+        return;
+    }
+
+    wrap.innerHTML = tables.map(t => {
+        const rows = t.json || [];
+        if (!rows.length) return '';
+        const headers = Object.keys(rows[0]);
+        const headerHtml = headers.map(h => `<th>${esc(h)}</th>`).join('');
+        const rowsHtml   = rows.map(row =>
+            `<tr>${headers.map(h => `<td>${esc(row[h] ?? '')}</td>`).join('')}</tr>`
+        ).join('');
+
+        return `
+        <div class="table-card">
+            <div class="table-card-header">
+                <span class="table-card-title">📊 Page ${t.page} — Table ${t.table_index}</span>
+                <span class="table-card-meta">${t.row_count} rows · ${t.col_count} cols · via ${t.source}</span>
+            </div>
+            <div class="table-card-body">
+                <table class="extracted-table">
+                    <thead><tr>${headerHtml}</tr></thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/* ── Tabs ────────────────────────────────────── */
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    // Highlight correct tab button
+    const btns = document.querySelectorAll('.tab-btn');
+    const labels = ['text', 'tables', 'json'];
+    btns[labels.indexOf(name)]?.classList.add('active');
+}
+
+/* ── Copy ────────────────────────────────────── */
+function copyContent() {
+    navigator.clipboard.writeText(document.getElementById('contentBox').textContent).catch(() => {});
+}
+function copyJson() {
+    navigator.clipboard.writeText(document.getElementById('jsonBox').textContent).catch(() => {});
+}
+
+/* ── Error ───────────────────────────────────── */
+function showError(msg) {
+    const el = document.getElementById('errorCard');
+    el.textContent = '❌ ' + msg;
+    el.classList.add('active');
+}
+
+/* ── Helpers ─────────────────────────────────── */
+function show(id) { document.getElementById(id).classList.add('active'); }
+function hide(id) { document.getElementById(id).classList.remove('active'); }
+function esc(str) {
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
