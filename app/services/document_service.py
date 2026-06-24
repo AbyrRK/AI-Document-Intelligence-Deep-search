@@ -10,6 +10,8 @@ Modes    : brief | summary | full | table
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
+from uuid import uuid4                          # ← NEW
 
 import fitz
 import openpyxl
@@ -18,6 +20,7 @@ from docx import Document
 from app.services.text_processor import process_text
 from app.services.chunking_service import create_chunks
 from app.services.vector_store import vector_store
+from app.services.rag_service import rag_service
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Constants
@@ -124,12 +127,11 @@ def _select_pages(doc, mode: str, total_pages: int, is_scanned: bool) -> list[in
         return list(range(total_pages))
 
     if mode == "brief":
-        # Find the first page with real content (skip cover pages)
         for i in range(min(BRIEF_PAGES + 1, total_pages)):
             text = doc[i].get_text("text").strip()
             if len(text) > 100:
                 return [i]
-        return [0]  # Fallback to first page
+        return [0]
 
     # summary mode
     selected = set()
@@ -265,6 +267,30 @@ def _extract_docx(path: Path, mode: str) -> dict:
 
     text = "\n\n".join(p.text for p in selected)
 
+    # ── ALWAYS extract tables regardless of mode ──────────────────────────────
+    table_text = ""
+    for table in doc.tables:
+        rows = []
+        for row in table.rows:
+            row_data = [cell.text.strip() for cell in row.cells]
+            # deduplicate merged cells (DOCX repeats merged cell content)
+            seen_cells = []
+            for cell in row_data:
+                if not seen_cells or cell != seen_cells[-1]:
+                    seen_cells.append(cell)
+            row_str = " | ".join(c for c in seen_cells if c)
+            if row_str.strip():
+                rows.append(row_str)
+        if rows:
+            table_text += "\n" + "\n".join(rows)
+
+    if table_text.strip():
+        text = text + "\n\n" + table_text.strip()
+        print(f"[DOCX] Table text appended: {len(table_text)} chars")  
+    else:
+        print(f"[DOCX] No table text found in {path.name}")  
+    # ─────────────────────────────────────────────────────────────────────────
+
     tables       = []
     tables_found = 0
     if mode == "table":
@@ -300,10 +326,9 @@ def _extract_docx(path: Path, mode: str) -> dict:
         "tables_found":      tables_found,
     }
 
-
 def _extract_xlsx(path: Path, mode: str) -> dict:
     wb               = openpyxl.load_workbook(str(path), read_only=True, data_only=True)
-    all_sheet_names  = wb.sheetnames          # ✅ Save before closing
+    all_sheet_names  = wb.sheetnames
     sheets           = all_sheet_names if mode == "full" else all_sheet_names[:1]
     row_limit        = {"brief": 20, "summary": 50}.get(mode)
     parts            = []
@@ -324,7 +349,7 @@ def _extract_xlsx(path: Path, mode: str) -> dict:
 
     return {
         "text":              text,
-        "pages_total":       len(all_sheet_names),   # ✅ uses saved value
+        "pages_total":       len(all_sheet_names),
         "pages_read":        len(sheets),
         "pages_selected":    [],
         "extraction_method": "direct",
@@ -364,9 +389,9 @@ def _extract_image(path: Path, mode: str) -> dict:
         result = extract_tables(str(path), page_indices=[0], is_scanned=True)
 
         parts = []
-        if result["text"].strip():
+        if result.get("text", "").strip():
             parts.append(result["text"])
-        if result["tables"]:
+        if result.get("tables"):
             parts.append("\n\n--- EXTRACTED TABLES ---\n")
             for t in result["tables"]:
                 parts.append(f"\n[Table {t['table_index']}]\n{t['markdown']}")
@@ -376,41 +401,147 @@ def _extract_image(path: Path, mode: str) -> dict:
             "pages_total":       1,
             "pages_read":        1,
             "pages_selected":    [1],
-            "extraction_method": "+".join(result["engines_used"]) or "none",
+            "extraction_method": "+".join(result.get("engines_used", [])) or "none",
             "is_scanned":        True,
             "is_handwritten":    False,
-            "tables":            result["tables"],
-            "tables_found":      result["tables_found"],
+            "ocr_confidence":    100,
+            "tables":            result.get("tables", []),
+            "tables_found":      result.get("tables_found", 0),
         }
 
     from app.services.ocr_service import ocr_image
     result = ocr_image(str(path))
 
+    print(f"[DEBUG] Image OCR: engine={result['metadata'].get('ocr_engine', 'unknown')}, "
+          f"confidence={result['metadata'].get('ocr_confidence', 0):.1f}%, "
+          f"text_length={len(result.get('text', ''))} chars")
+
     return {
-        "text":              result["text"],
+        "text":              result.get("text", ""),
         "pages_total":       1,
         "pages_read":        1,
         "pages_selected":    [1],
-        "extraction_method": result["metadata"]["ocr_engine"],
+        "extraction_method": result.get("metadata", {}).get("ocr_engine", "unknown"),
         "is_scanned":        True,
-        "is_handwritten":    result["metadata"].get("is_handwritten", False),
+        "is_handwritten":    result.get("metadata", {}).get("is_handwritten", False),
+        "ocr_confidence":    result.get("metadata", {}).get("ocr_confidence", 0),
         "tables":            [],
         "tables_found":      0,
     }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Main entry point
+# Skeleton extraction
 # ─────────────────────────────────────────────────────────────────────────────
 
-def process_document(file_path: str, mode: str = "brief", index: bool = False) -> dict:
-    """
-    Parameters
-    ----------
-    mode : "brief" | "summary" | "full" | "table"
-    index : bool
-        If True, chunks and indexes the document into Qdrant.
-    """
+def extract_skeleton(file_path: str) -> dict:
+    path   = Path(file_path)
+    suffix = path.suffix.lower()
+    titles = []
+
+    if suffix == ".pdf":
+        doc         = fitz.open(str(path))
+        total_pages = len(doc)
+        is_scanned  = _is_scanned_pdf(doc)
+
+        if is_scanned:
+            doc.close()
+            return {
+                "titles":      [],
+                "total_pages": total_pages,
+                "is_scanned":  True,
+                "supported":   False,
+                "note":        f"Scanned document ({total_pages} pages) — OCR running in background",
+            }
+
+        for page_num, page in enumerate(doc):
+            blocks    = page.get_text("dict").get("blocks", [])
+            all_sizes = [
+                span["size"]
+                for block in blocks if block.get("type") == 0
+                for line in block.get("lines", [])
+                for span in line.get("spans", [])
+                if span.get("size", 0) > 0
+            ]
+            if not all_sizes:
+                continue
+
+            avg_size = sum(all_sizes) / len(all_sizes)
+            seen_on_page = set()
+
+            for block in blocks:
+                if block.get("type") != 0:
+                    continue
+                for line in block.get("lines", []):
+                    for span in line.get("spans", []):
+                        text = span.get("text", "").strip()
+                        size = span.get("size", 0)
+                        if (
+                            size > avg_size * BIG_TITLE_RATIO
+                            and size > BIG_TITLE_MIN_PT
+                            and text
+                            and text not in seen_on_page
+                        ):
+                            seen_on_page.add(text)
+                            titles.append({
+                                "page":      page_num + 1,
+                                "title":     text,
+                                "font_size": round(size, 1),
+                            })
+        doc.close()
+
+        return {
+            "titles":      titles,
+            "total_pages": total_pages,
+            "is_scanned":  False,
+            "supported":   True,
+            "note":        None,
+        }
+
+    elif suffix == ".docx":
+        word_doc = Document(str(path))
+        for para in word_doc.paragraphs:
+            style_name = para.style.name if para.style and hasattr(para.style, "name") else ""
+            text       = para.text.strip()
+            if style_name.startswith("Heading") and text:
+                level = style_name.replace("Heading", "").strip()
+                titles.append({
+                    "page":      1,
+                    "title":     text,
+                    "font_size": None,
+                    "level":     level,
+                })
+
+        return {
+            "titles":      titles,
+            "total_pages": 1,
+            "is_scanned":  False,
+            "supported":   True,
+            "note":        None,
+        }
+
+    else:
+        return {
+            "titles":      [],
+            "total_pages": 1,
+            "is_scanned":  suffix in IMAGE_EXTENSIONS,
+            "supported":   False,
+            "note":        "Structure detection not available for this format",
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main extraction entry point
+# ─────────────────────────────────────────────────────────────────────────────
+
+def process_document(
+    file_path:  str,
+    mode:       str  = "brief",
+    index:      bool = False,
+    session_id: str  = "",
+    file_name:  str  = "",
+    doc_id:     str  = "",          # ← NEW: pass in or leave blank to skip indexing with doc_id
+) -> dict:
     if mode not in ("brief", "summary", "full", "table"):
         raise ValueError(f"Invalid mode '{mode}'. Choose: brief | summary | full | table")
 
@@ -433,7 +564,6 @@ def process_document(file_path: str, mode: str = "brief", index: bool = False) -
 
     text = result["text"]
 
-    # ── Language detection + text cleaning ───────────────────────────────────
     if mode != "table":
         processed = process_text(text)
         text      = processed["clean_text"]
@@ -441,31 +571,44 @@ def process_document(file_path: str, mode: str = "brief", index: bool = False) -
     else:
         language = "unknown"
 
-    # ── Chunking and indexing ────────────────────────────────────────────────
+    ocr_confidence = result.get("ocr_confidence", 100)
+    text_has_content = bool(text.strip()) and len(text.strip()) > 50
+
+    if index and ocr_confidence < 40 and not text_has_content:
+        print(f"⚠️  OCR confidence too low ({ocr_confidence}%) and text too short — skipping indexing")
+        index = False
+    elif index and ocr_confidence < 40 and text_has_content:
+        print(f"⚠️  OCR confidence low ({ocr_confidence}%) but text has {len(text)} chars — indexing anyway")
+
+    display_name = file_name or path.name
+
     chunks_created = 0
-    if index:                                    # ✅ respect caller's intent only
+    if index:
         chunks = create_chunks(
             text=text,
             metadata={
-                "file_name":         path.name,
+                "file_name":         display_name,
+                "doc_id":            doc_id,           # ← NEW
                 "file_type":         suffix.lstrip("."),
                 "language":          language,
                 "extraction_method": result["extraction_method"],
+                "session_id":        session_id,
                 "mode":              mode,
+                "created_at":        datetime.utcnow().isoformat(),
             }
         )
         vector_store.ensure_collection()
-        chunks_created = vector_store.add_documents(chunks)
-        print(f"📦 {chunks_created} chunks indexed in Qdrant")
+        chunks_created = vector_store.add_documents(chunks, session_id=session_id)
+        print(f"📦 {chunks_created} chunks indexed in Qdrant (mode={mode}, doc_id={doc_id[:8]}...)")
 
-    # ── Final response ───────────────────────────────────────────────────────
-    word_count      = _word_count(text)          # ✅ before truncation
+    word_count      = _word_count(text)
     display_content = text if mode == "table" else text[:5000]
     elapsed_ms      = (time.perf_counter() - t0) * 1000
 
     return {
         "status":    "success",
-        "file_name": path.name,
+        "file_name": display_name,
+        "doc_id":    doc_id,          # ← NEW: returned so caller can store/forward it
         "file_type": suffix.lstrip("."),
         "file_size_kb": round(path.stat().st_size / 1024, 2),
         "mode": mode,
@@ -473,13 +616,14 @@ def process_document(file_path: str, mode: str = "brief", index: bool = False) -
             "pages_total":       result["pages_total"],
             "pages_read":        result["pages_read"],
             "pages_selected":    result["pages_selected"],
-            "word_count":        word_count,         # ✅ full text count
+            "word_count":        word_count,
             "char_count":        len(text),
             "extraction_method": result["extraction_method"],
             "is_scanned":        result["is_scanned"],
             "is_handwritten":    result.get("is_handwritten", False),
             "language":          language,
-            "content":           display_content,    # ✅ truncated only for display
+            "content":           display_content,
+            "full_text":         text,
             "tables":            result.get("tables", []),
             "tables_found":      result.get("tables_found", 0),
             "indexed":           chunks_created > 0,
@@ -488,6 +632,7 @@ def process_document(file_path: str, mode: str = "brief", index: bool = False) -
         },
         "processing_time_ms": round(elapsed_ms, 1),
     }
+
 
 def ingest_document(extracted_text: str, file_metadata: dict) -> dict:
     if not extracted_text or not extracted_text.strip():
@@ -500,8 +645,7 @@ def ingest_document(extracted_text: str, file_metadata: dict) -> dict:
         }
 
     processed = process_text(extracted_text)
-
-    metadata = {
+    metadata  = {
         **file_metadata,
         "language":   processed["language"],
         "word_count": processed["word_count"],
@@ -517,3 +661,164 @@ def ingest_document(extracted_text: str, file_metadata: dict) -> dict:
         "reduction_pct":  processed["reduction_pct"],
         "clean_length":   processed["clean_length"],
     }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# MULTI-DOCUMENT & LAZY INDEXING
+# ═════════════════════════════════════════════════════════════════════════════
+
+from app.services.chat_memory import get_session_history, save_session, add_session_file, get_session_files
+
+_deferred_chunks: dict[str, list] = {}
+
+
+def process_and_respond(
+    file_path:  str,
+    prompt:     Optional[str] = None,
+    session_id: str = "",
+    mode:       str = "brief",
+    index:      bool = True,
+    lazy:       bool = True,
+    file_name:  str = "",
+    doc_id:     str = "",          # ← NEW: generated once by the route, passed all the way down
+) -> dict:
+    """
+    Extract document and either answer immediately or return a brief.
+
+    doc_id is generated ONCE in the upload route (uuid4), then passed here
+    and forwarded into every chunk's metadata. This is the stable identifier
+    for this document across all operations (search, delete, Phase 5 RAG agent).
+    """
+    # 1. Extract (never index here — we control it)
+    result = process_document(
+        file_path=file_path,
+        mode=mode,
+        index=False,
+        session_id=session_id,
+        file_name=file_name,
+        doc_id=doc_id,             # ← NEW
+    )
+
+    text         = result.get("extraction", {}).get("full_text", "")
+    scanned_note = None
+    if result.get("extraction", {}).get("is_scanned"):
+        scanned_note = (
+            f"Scanned document ({result['extraction']['pages_total']} pages) — "
+            "OCR running in background"
+        )
+
+    # 2. Track this file in session metadata
+    display_name = file_name or result["file_name"]
+    add_session_file(session_id, display_name)
+
+    # 3. Build chunks — doc_id stamped on every chunk here
+    chunks = create_chunks(
+        text=text,
+        metadata={
+            "file_name":         display_name,
+            "doc_id":            doc_id,        # ← NEW
+            "file_type":         result["file_type"],
+            "language":          result["extraction"]["language"],
+            "extraction_method": result["extraction"]["extraction_method"],
+            "session_id":        session_id,
+            "mode":              mode,
+            "created_at":        datetime.utcnow().isoformat(),
+        }
+    )
+
+    # 4. Check if session already has indexed content
+    already_indexed = False
+    try:
+        existing = vector_store.search_by_session("test", session_id=session_id, k=1)
+        already_indexed = len(existing) > 0
+    except Exception:
+        pass
+
+    # 5. Lazy path: defer indexing
+    should_lazy = lazy and mode in ("brief", "summary") and not prompt and not already_indexed
+
+    if should_lazy:
+        if session_id in _deferred_chunks:
+            _deferred_chunks[session_id].extend(chunks)
+            print(f"⏳ Lazy mode: appended {len(chunks)} chunks (total: {len(_deferred_chunks[session_id])}) for session {session_id[:8]}")
+        else:
+            _deferred_chunks[session_id] = chunks
+            print(f"⏳ Lazy mode: stored {len(chunks)} chunks for session {session_id[:8]}")
+
+        all_chunks = _deferred_chunks[session_id]
+        fallback = "\n\n".join(c["content"] for c in all_chunks[:8])
+        brief = rag_service.generate_brief(session_id, fallback_text=fallback)
+
+        return {
+            "status":       "summarized",
+            "summary":      brief,
+            "message":      brief,
+            "chunks_ready": len(all_chunks),
+            "indexed":      False,
+            "scanned_note": scanned_note,
+            "file_name":    display_name,
+            "doc_id":       doc_id,             # ← NEW
+        }
+
+    # 6. Eager path: index now
+    chunks_created = 0
+    if index:
+        vector_store.ensure_collection()
+        chunks_created = vector_store.add_documents(chunks, session_id=session_id)
+        if session_id in _deferred_chunks:
+            deferred = _deferred_chunks.pop(session_id)
+            if deferred:
+                deferred_count = vector_store.add_documents(deferred, session_id=session_id)
+                chunks_created += deferred_count
+                print(f"✅ Also indexed {deferred_count} deferred chunks for session {session_id[:8]}")
+        print(f"✅ Indexed {chunks_created} chunks for session {session_id[:8]}, doc_id={doc_id[:8]}...")
+
+    # 7. Prompt given → RAG answer
+    if prompt and prompt.strip():
+        rag_result = rag_service.ask(prompt, session_id=session_id)
+        return {
+            "status":         "answered",
+            "session_id":     session_id,
+            "doc_id":         doc_id,           # ← NEW
+            "chunks_indexed": chunks_created,
+            "answer":         rag_result["answer"],
+            "sources":        rag_result["sources"],
+            "scanned_note":   scanned_note,
+            "file_name":      display_name,
+        }
+
+    # 8. No prompt → brief
+    brief = rag_service.generate_brief(session_id)
+
+    history = get_session_history(session_id)
+    history.add_ai_message(brief)
+    save_session(session_id)
+
+    return {
+        "status":         "summarized",
+        "session_id":     session_id,
+        "doc_id":         doc_id,               # ← NEW
+        "chunks_indexed": chunks_created,
+        "summary":        brief,
+        "scanned_note":   scanned_note,
+        "message":        brief,
+        "file_name":      display_name,
+    }
+
+
+def ensure_indexed(session_id: str) -> bool:
+    """Trigger indexing for a lazy session before the first question."""
+    if session_id in _deferred_chunks:
+        chunks = _deferred_chunks.pop(session_id)
+        if not chunks:
+            return False
+        vector_store.ensure_collection()
+        count = vector_store.add_documents(chunks, session_id=session_id)
+        print(f"🚀 Lazy indexing triggered: {count} chunks for session {session_id[:8]}")
+        return True
+
+    try:
+        existing = vector_store.search_by_session("test", session_id=session_id, k=1)
+        return len(existing) > 0
+    except Exception:
+        return False

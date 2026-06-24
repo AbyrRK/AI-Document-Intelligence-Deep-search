@@ -1,132 +1,67 @@
-version: '3.8'
+# ============================================================
+# PFE2026 - Docker Compose with Redis cache + Qdrant
+# ============================================================
 
 services:
-  # ============================================================
-  # 1. VOTRE API FASTAPI
-  # ============================================================
+
+  # API Gateway / FastAPI app
   api:
     build: .
-    container_name: pfe_api
+    container_name: pfe2026_api
     ports:
       - "8000:8000"
     environment:
-      # Base de données
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/pfedb
-      # Qdrant (utilise le nom du service comme hostname)
-      QDRANT_URL: http://qdrant:6333
-      # Redis
-      REDIS_URL: redis://redis:6379/0
-      # Clés API (à remplacer par les vraies valeurs ou .env)
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      TAVILY_API_KEY: ${TAVILY_API_KEY}
-      # Tesseract est déjà dans le container (voir Dockerfile)
-      TESSERACT_PATH: /usr/bin/tesseract
-    volumes:
-      # Persistance des uploads temporaires
-      - ./uploads:/app/uploads
-      - ./logs:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
-      redis:
-        condition: service_started
-    restart: unless-stopped
-    networks:
-      - pfe_network
-
-  # ============================================================
-  # 2. WORKER CELERY (Traitement async des gros fichiers)
-  # ============================================================
-  celery-worker:
-    build: .
-    container_name: pfe_celery
-    command: celery -A app.celery_app worker --loglevel=info --concurrency=2
-    environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/pfedb
-      QDRANT_URL: http://qdrant:6333
-      REDIS_URL: redis://redis:6379/0
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      TAVILY_API_KEY: ${TAVILY_API_KEY}
-      TESSERACT_PATH: /usr/bin/tesseract
-    volumes:
-      - ./uploads:/app/uploads
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
     depends_on:
       - redis
-      - postgres
-      - api
-    restart: unless-stopped
-    networks:
-      - pfe_network
-
-  # ============================================================
-  # 3. BASE VECTORIELLE QDRANT
-  # ============================================================
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: pfe_qdrant
-    ports:
-      - "6333:6333"   # HTTP API
-      - "6334:6334"   # gRPC (optionnel)
+      - qdrant
     volumes:
-      # Persistance des vecteurs même si le container redémarre
-      - qdrant_storage:/qdrant/storage
+      - ./data:/app/data
     restart: unless-stopped
-    networks:
-      - pfe_network
 
-  # ============================================================
-  # 4. CACHE / FILE D'ATTENTE REDIS
-  # ============================================================
+  # Celery worker for research tasks
+  worker:
+    build: .
+    container_name: pfe2026_worker
+    command: celery -A app.celery_app worker --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      - redis
+      - qdrant
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # Redis — cache + Celery broker + result backend
   redis:
     image: redis:7-alpine
-    container_name: pfe_redis
+    container_name: pfe2026_redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
-    networks:
-      - pfe_network
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 
-  # ============================================================
-  # 5. BASE DE DONNÉES POSTGRESQL
-  # ============================================================
-  postgres:
-    image: postgres:15-alpine
-    container_name: pfe_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: pfedb
+  # Vector database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: pfe2026_qdrant
     ports:
-      - "5432:5432"
+      - "6333:6333"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - qdrant_storage:/qdrant/storage
     restart: unless-stopped
-    networks:
-      - pfe_network
 
-# ============================================================
-# VOLUMES (Stockage persistant)
-# ============================================================
 volumes:
-  qdrant_storage:
-    driver: local
-  postgres_data:
-    driver: local
   redis_data:
     driver: local
-
-# ============================================================
-# RÉSEAU (Communication entre containers)
-# ============================================================
-networks:
-  pfe_network:
-    driver: bridge
+  qdrant_storage:
+    driver: local

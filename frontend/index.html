@@ -3,654 +3,1438 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document Processor — PFE 2026</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg:        #0d0f14;
-            --surface:   #161920;
-            --panel:     #1e2230;
-            --border:    #2a2f3d;
-            --accent:    #5b8fff;
-            --accent2:   #00e5a0;
-            --accent3:   #ffb547;
-            --danger:    #ff5c7a;
-            --text:      #dde1f0;
-            --muted:     #6b728e;
-            --font-ui:   'Syne', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
+    <title>PFE2026 - Document AI Assistant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font-ui);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 40px 20px 60px;
-        }
+.app {
+    width: 98%;
+    max-width: 1200px;
+    height: 92vh;
+    display: flex;
+    gap: 16px;
+}
 
-        .container { width: 100%; max-width: 760px; }
+.sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.2);
+}
 
-        /* Header */
-        .header { margin-bottom: 36px; }
-        .header-tag {
-            font-size: 11px;
-            font-family: var(--font-mono);
-            color: var(--accent2);
-            letter-spacing: .15em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .header h1 { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
-        .header h1 span { color: var(--accent); }
-        .header p { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.sidebar-header {
+    padding: 18px 16px 12px;
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.sidebar-header span { opacity: 0.7; font-size: 0.75rem; font-weight: 400; }
 
-        /* Card */
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 28px;
-            margin-bottom: 20px;
-        }
+.history-list { flex: 1; overflow-y: auto; padding: 8px; }
+.history-list::-webkit-scrollbar { width: 4px; }
+.history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
 
-        /* Drop zone */
-        .drop-zone {
-            border: 2px dashed var(--border);
-            border-radius: 10px;
-            padding: 32px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color .2s, background .2s;
-            position: relative;
-        }
-        .drop-zone:hover, .drop-zone.drag-over {
-            border-color: var(--accent);
-            background: rgba(91,143,255,.05);
-        }
-        .drop-zone input[type="file"] {
-            position: absolute; inset: 0;
-            opacity: 0; cursor: pointer; width: 100%; height: 100%;
-        }
-        .drop-zone-icon { font-size: 32px; margin-bottom: 10px; }
-        .drop-zone-label { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-        .drop-zone-sub { font-size: 12px; color: var(--muted); }
-        .file-chosen {
-            margin-top: 10px;
-            font-family: var(--font-mono);
-            font-size: 12px;
-            color: var(--accent2);
-        }
+.history-item {
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 4px;
+    color: white;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+.history-item:hover  { background: rgba(255,255,255,0.15); }
+.history-item.active { background: rgba(255,255,255,0.25); }
+.history-item .hi-content { flex: 1; min-width: 0; }
+.history-item .hi-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.history-item .hi-meta { font-size: 0.72rem; opacity: 0.6; margin-top: 2px; }
+.history-item .hi-delete {
+    opacity: 0;
+    transition: opacity 0.15s;
+    background: rgba(220,38,38,0.8);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.history-item:hover .hi-delete { opacity: 1; }
+.history-item .hi-delete:hover { background: rgba(185,28,28,1); }
+.history-empty { text-align: center; color: rgba(255,255,255,0.4); font-size: 0.82rem; padding: 30px 16px; }
+.running-badge { display: inline-block; font-size: 0.75rem; flex-shrink: 0; animation: spin 2s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        /* Mode grid — 4 columns */
-        .mode-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 20px;
-        }
-        @media (max-width: 600px) {
-            .mode-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        .mode-btn {
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 8px;
-            cursor: pointer;
-            transition: border-color .2s, background .2s;
-            text-align: center;
-            background: var(--panel);
-        }
-        .mode-btn:hover { border-color: var(--accent); }
-        .mode-btn.active {
-            border-color: var(--accent);
-            background: rgba(91,143,255,.12);
-        }
-        .mode-btn.active.table-mode {
-            border-color: var(--accent3);
-            background: rgba(255,181,71,.10);
-        }
-        .mode-btn input { display: none; }
-        .mode-icon { font-size: 20px; margin-bottom: 6px; }
-        .mode-name { font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px; }
-        .mode-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
-        .mode-badge {
-            display: inline-block;
-            margin-top: 6px;
-            font-size: 10px;
-            font-family: var(--font-mono);
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: rgba(91,143,255,.15);
-            color: var(--accent);
-        }
-        .mode-btn.active .mode-badge { background: var(--accent); color: #fff; }
-        .mode-btn.active.table-mode .mode-badge {
-            background: var(--accent3);
-            color: #000;
-        }
+.container {
+    flex: 1;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
 
-        /* Section label */
-        .section-label {
-            font-size: 11px;
-            font-family: var(--font-mono);
-            color: var(--muted);
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
+.header {
+    background: linear-gradient(90deg, #4f46e5, #7c3aed);
+    color: white;
+    padding: 18px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+.header h1 { font-size: 1.3rem; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; }
+.btn-new-chat {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-new-chat:hover { background: rgba(255,255,255,0.28); }
 
-        /* Submit */
-        .submit-btn {
-            width: 100%;
-            padding: 16px;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            font-family: var(--font-ui);
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity .2s, transform .15s;
-            margin-top: 20px;
-        }
-        .submit-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
-        .submit-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+/* ── Chat-style doc card (sent message) ── */
+.doc-card {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 10px;
+    padding: 10px 14px;
+    min-width: 160px;
+    max-width: 240px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.doc-card-icon {
+    width: 32px; height: 32px; border-radius: 7px;
+    background: rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.doc-card-icon svg { width: 16px; height: 16px; stroke: white; }
+.doc-card-text { min-width: 0; }
+.doc-card-name { font-size: 0.84rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-card-type { font-size: 0.7rem; color: rgba(255,255,255,0.55); margin-top: 1px; letter-spacing: 0.03em; }
+.doc-card-message { padding: 8px 10px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 14px; align-self: flex-end; }
 
-        /* Progress */
-        .progress-wrap { display: none; margin-top: 20px; }
-        .progress-wrap.active { display: block; }
-        .progress-bar-bg { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--accent2));
-            border-radius: 2px;
-            animation: progressAnim 2s ease-in-out infinite alternate;
-        }
-        @keyframes progressAnim { from { width: 20%; } to { width: 90%; } }
-        .progress-msg { font-size: 12px; font-family: var(--font-mono); color: var(--muted); margin-top: 8px; }
+/* ── File preview chip INSIDE the input wrapper ── */
+.file-preview-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 0 8px 0;
+}
+.file-preview-list:empty { display: none; padding: 0; }
 
-        /* Result */
-        .result-card { display: none; }
-        .result-card.active { display: block; }
+.file-preview-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 6px 10px 6px 8px;
+    font-size: 0.8rem;
+    color: #374151;
+    animation: fadeIn 0.18s ease;
+    max-width: 220px;
+}
+.file-preview-chip:hover { background: #eef2ff; border-color: #c7d2fe; }
+.file-preview-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.file-preview-icon svg { width: 14px; height: 14px; stroke: white; stroke-width: 2; }
+.file-preview-info { min-width: 0; flex: 1; }
+.file-preview-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+    font-size: 0.8rem;
+    color: #1f2937;
+}
+.file-preview-size { font-size: 0.68rem; color: #9ca3af; margin-top: 1px; }
+.file-preview-remove {
+    background: none; border: none; cursor: pointer;
+    color: #9ca3af; font-size: 1rem; line-height: 1;
+    padding: 0 2px; flex-shrink: 0;
+    transition: color 0.15s;
+}
+.file-preview-remove:hover { color: #dc2626; }
 
-        /* Stats */
-        .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-        .stat {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 16px;
-            flex: 1;
-            min-width: 100px;
-        }
-        .stat-label { font-size: 10px; font-family: var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
-        .stat-value { font-size: 16px; font-weight: 700; }
-        .stat-value.accent  { color: var(--accent); }
-        .stat-value.success { color: var(--accent2); }
-        .stat-value.warning { color: var(--accent3); }
+.guardrail-card { color: #92400e; background: #fff7ed; padding: 16px; border-radius: 12px; border-left: 4px solid #f59e0b; font-size: 0.95rem; line-height: 1.6; }
+.guardrail-card[dir="rtl"] { border-left: none; border-right: 4px solid #f59e0b; text-align: right; }
+.guardrail-title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 700; font-size: 1.05rem; color: #78350f; }
+.guardrail-card[dir="rtl"] .guardrail-title { flex-direction: row-reverse; }
+.guardrail-icon { font-size: 1.2rem; flex-shrink: 0; }
+.guardrail-body { color: #92400e; }
 
-        /* Pages chips */
-        .pages-line { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; align-items: center; }
-        .pages-line-label { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-right: 6px; }
-        .page-chip {
-            font-family: var(--font-mono);
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            background: rgba(91,143,255,.15);
-            color: var(--accent);
-            border: 1px solid rgba(91,143,255,.3);
-        }
+#deepResearchBtn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+#deepResearchBtn:hover { background: rgba(255,255,255,0.2); }
 
-        /* Tabs */
-        .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-        .tab-btn {
-            padding: 7px 16px;
-            border-radius: 7px;
-            border: 1.5px solid var(--border);
-            background: var(--panel);
-            color: var(--muted);
-            font-family: var(--font-mono);
-            font-size: 12px;
-            cursor: pointer;
-            transition: all .15s;
-        }
-        .tab-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(91,143,255,.1); }
-        .tab-btn.table-tab.active { border-color: var(--accent3); color: var(--accent3); background: rgba(255,181,71,.1); }
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
+.scanned-banner { background: #fff7ed; border-left: 4px solid #f59e0b; padding: 10px 20px; font-size: 0.82rem; color: #92400e; display: none; flex-shrink: 0; }
 
-        /* Content box */
-        .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .content-label { font-size: 11px; font-family: var(--font-mono); color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
-        .copy-btn {
-            font-size: 11px;
-            font-family: var(--font-mono);
-            background: var(--panel);
-            border: 1px solid var(--border);
-            color: var(--muted);
-            border-radius: 5px;
-            padding: 3px 10px;
-            cursor: pointer;
-            transition: color .15s, border-color .15s;
-        }
-        .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
-        .content-box {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 18px;
-            max-height: 360px;
-            overflow-y: auto;
-            font-family: var(--font-mono);
-            font-size: 12.5px;
-            line-height: 1.75;
-            color: #c9cfe8;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        .content-box::-webkit-scrollbar { width: 6px; }
-        .content-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.session-info { padding: 7px 28px; background: #f3f4f6; font-size: 0.78rem; color: #6b7280; display: none; justify-content: space-between; align-items: center; flex-shrink: 0; border-bottom: 1px solid #e5e7eb; }
+.session-info button.clear { background: #fee2e2; color: #dc2626; border: none; padding: 3px 10px; border-radius: 6px; font-size: 0.73rem; cursor: pointer; transition: background 0.15s; }
+.session-info button.clear:hover { background: #fecaca; }
 
-        /* Tables display */
-        .tables-wrap { display: flex; flex-direction: column; gap: 20px; }
-        .table-card {
-            border: 1px solid rgba(255,181,71,.25);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .table-card-header {
-            background: rgba(255,181,71,.08);
-            padding: 10px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            font-family: var(--font-mono);
-        }
-        .table-card-title { color: var(--accent3); font-weight: 600; }
-        .table-card-meta { color: var(--muted); font-size: 11px; }
-        .table-card-body { padding: 0; overflow-x: auto; }
+.chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.messages { flex: 1; overflow-y: auto; padding: 20px 28px; display: flex; flex-direction: column; gap: 14px; }
+.messages::-webkit-scrollbar { width: 6px; }
+.messages::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
 
-        table.extracted-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            font-family: var(--font-mono);
-        }
-        table.extracted-table th {
-            background: rgba(255,181,71,.12);
-            color: var(--accent3);
-            padding: 9px 14px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255,181,71,.2);
-            white-space: nowrap;
-        }
-        table.extracted-table td {
-            padding: 8px 14px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text);
-            vertical-align: top;
-        }
-        table.extracted-table tr:last-child td { border-bottom: none; }
-        table.extracted-table tr:hover td { background: rgba(255,181,71,.04); }
+.message { max-width: 82%; padding: 13px 17px; border-radius: 18px; line-height: 1.55; font-size: 0.93rem; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.message.user { align-self: flex-end; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border-bottom-right-radius: 4px; }
+.message.assistant { align-self: flex-start; background: #f3f4f6; color: #1f2937; border-bottom-left-radius: 4px; max-width: 90%; }
 
-        .no-tables {
-            padding: 30px;
-            text-align: center;
-            color: var(--muted);
-            font-family: var(--font-mono);
-            font-size: 13px;
-        }
+.answer-body { line-height: 1.65; }
+.answer-body h1, .answer-body h2, .answer-body h3 { font-weight: 700; color: #1f2937; margin: 12px 0 6px; }
+.answer-body h1 { font-size: 1.05rem; }
+.answer-body h2 { font-size: 1rem; }
+.answer-body h3 { font-size: 0.95rem; color: #4f46e5; }
+.answer-body p { margin: 6px 0; }
+.answer-body ul, .answer-body ol { margin: 6px 0 6px 20px; }
+.answer-body li { margin-bottom: 4px; }
+.answer-body strong { font-weight: 700; color: #111827; }
+.answer-body em { font-style: italic; color: #374151; }
+.answer-body a { color: #4f46e5; text-decoration: underline; }
+.answer-body table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 10px 0; }
+.answer-body th { background: #f3f4f6; padding: 6px 10px; text-align: left; font-weight: 600; border: 1px solid #e5e7eb; }
+.answer-body td { padding: 6px 10px; border: 1px solid #e5e7eb; }
+.answer-body code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; font-family: monospace; }
+.answer-body pre { background: #1e1b4b; color: #e0e7ff; padding: 12px 16px; border-radius: 10px; overflow-x: auto; font-size: 0.82rem; margin: 8px 0; }
+.answer-body pre code { background: none; padding: 0; color: inherit; }
+.answer-body blockquote { border-left: 3px solid #c4b5fd; padding-left: 10px; color: #6b7280; margin: 8px 0; }
 
-        /* Method badge */
-        .method-badge {
-            display: inline-block;
-            font-size: 11px;
-            font-family: var(--font-mono);
-            padding: 3px 8px;
-            border-radius: 5px;
-        }
-        .method-badge.native      { background: rgba(0,229,160,.12); color: var(--accent2); }
-        .method-badge.ocr         { background: rgba(255,92,122,.12); color: var(--danger); }
-        .method-badge.direct      { background: rgba(91,143,255,.12); color: var(--accent); }
-        .method-badge.pdfplumber  { background: rgba(91,143,255,.12); color: var(--accent); }
-        .method-badge.img2table   { background: rgba(255,181,71,.12); color: var(--accent3); }
-        .method-badge.gemini      { background: rgba(0,229,160,.12); color: var(--accent2); }
+.citation-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white; font-size: 0.7rem; font-weight: 700;
+    border-radius: 50%; margin: 0 2px; vertical-align: super; line-height: 1;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.citation-badge:hover { transform: scale(1.2); box-shadow: 0 2px 8px rgba(124,58,237,0.4); }
+.citation-link { cursor: pointer; }
 
-        /* Error */
-        .error-card {
-            display: none;
-            background: rgba(255,92,122,.08);
-            border: 1px solid rgba(255,92,122,.3);
-            border-radius: 10px;
-            padding: 18px;
-            margin-top: 16px;
-            font-size: 13px;
-            color: var(--danger);
-            font-family: var(--font-mono);
-        }
-        .error-card.active { display: block; }
-    </style>
+.sources-collapsible { margin-top: 14px; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+.sources-collapsible summary { cursor: pointer; list-style: none; user-select: none; }
+.sources-collapsible summary::-webkit-details-marker { display: none; }
+.sources-header { display: flex; justify-content: space-between; align-items: center; color: #6b7280; font-size: 0.78rem; font-weight: 600; transition: color 0.15s; }
+.sources-collapsible summary:hover .sources-header { color: #4f46e5; }
+.sources-collapsible[open] summary .sources-header { color: #4f46e5; }
+.sources-count { background: #f3f4f6; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 500; color: #6b7280; }
+.sources-section-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #9ca3af; padding: 8px 2px 2px; margin-top: 2px; }
+.sources-box { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+
+.source-chip {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px 12px 20px;
+    background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;
+    font-size: 0.85rem;
+    transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+    position: relative; color: inherit;
+}
+.source-chip:hover { background: #f8faff; border-color: #c7d2fe; box-shadow: 0 4px 14px -4px rgba(79,70,229,0.14); transform: translateY(-1px); }
+.source-chip:active { transform: translateY(0); }
+.source-num-badge {
+    position: absolute; top: -9px; left: -9px;
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700;
+    border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); z-index: 2;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white;
+}
+.source-favicon { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: #f3f4f6; border: 1px solid #e5e7eb; }
+.source-favicon-fallback { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+.source-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.source-title { color: #111827; font-weight: 600; font-size: 0.86rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.source-subtitle { color: #9ca3af; font-size: 0.76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.source-hint { color: #a5b4fc; font-size: 0.7rem; margin-top: 1px; }
+.source-arrow { color: #c4b5fd; font-size: 1rem; flex-shrink: 0; opacity: 0; transition: opacity 0.18s; }
+.source-chip:hover .source-arrow { opacity: 1; }
+
+/* ── Excerpt panel ── */
+.excerpt-panel {
+    position: fixed; bottom: 80px; right: 28px; z-index: 9999;
+    width: 420px; max-height: 420px; overflow-y: auto;
+    background: white; border: 1px solid #c7d2fe;
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(79,70,229,0.22);
+    padding: 0; animation: slideUp 0.2s ease;
+}
+.excerpt-panel-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 14px 16px 12px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 16px 16px 0 0;
+}
+.excerpt-panel-title { font-size: 0.88rem; font-weight: 700; color: white; }
+.excerpt-panel-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.excerpt-panel-page { font-size: 0.72rem; color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 10px; }
+.excerpt-panel-score { font-size: 0.72rem; color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 10px; }
+.excerpt-panel-close { background: rgba(255,255,255,0.2); border: none; font-size: 1rem; cursor: pointer; color: white; line-height: 1; padding: 4px 8px; border-radius: 8px; flex-shrink: 0; transition: background 0.15s; }
+.excerpt-panel-close:hover { background: rgba(255,255,255,0.35); }
+.excerpt-panel-body { padding: 14px 16px; }
+.excerpt-panel-hint { font-size: 0.72rem; color: #9ca3af; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+.excerpt-panel blockquote { border-left: 3px solid #c4b5fd; padding-left: 12px; margin: 0; color: #374151; font-size: 0.85rem; line-height: 1.8; font-style: normal; white-space: pre-wrap; }
+.excerpt-highlight { background: linear-gradient(120deg, #fef08a 0%, #fde047 100%); color: #713f12; border-radius: 3px; padding: 0 2px; font-weight: 700; font-style: normal; box-shadow: 0 1px 3px rgba(234,179,8,0.4); }
+
+/* ── Answer card ── */
+.answer-card { background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%); border: 1px solid #c7d2fe; border-radius: 14px; padding: 16px 18px; margin-bottom: 10px; }
+.answer-card-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #7c3aed; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+.answer-card-value { font-size: 1.35rem; font-weight: 800; color: #1e1b4b; line-height: 1.25; letter-spacing: -0.01em; }
+.answer-card-sub { font-size: 0.78rem; color: #6b7280; margin-top: 5px; }
+
+.summary-box { background: white; border-left: 4px solid #7c3aed; padding: 12px 14px; border-radius: 8px; }
+.summary-box h3 { color: #7c3aed; margin-bottom: 8px; font-size: 0.88rem; }
+
+.typing { display: flex; gap: 6px; padding: 10px 4px; align-items: center; }
+.typing span { width: 8px; height: 8px; background: #9ca3af; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+.typing span:nth-child(1) { animation-delay: -0.32s; }
+.typing span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+/* ── Input area ── */
+.input-area { padding: 12px 28px 16px; border-top: 1px solid #e5e7eb; background: white; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.input-row { display: flex; gap: 10px; align-items: flex-end; }
+.input-wrapper {
+    flex: 1; position: relative;
+    border: 2px solid #e5e7eb; border-radius: 14px;
+    padding: 10px 14px;
+    transition: border-color 0.2s, background 0.2s;
+    background: white;
+}
+.input-wrapper:focus-within { border-color: #7c3aed; background: #faf5ff; }
+.input-wrapper.dragover { border-color: #7c3aed; background: #f5f3ff; border-style: dashed; }
+.input-wrapper textarea { width: 100%; border: none; outline: none; resize: none; font-size: 0.93rem; line-height: 1.5; font-family: inherit; background: transparent; min-height: 24px; max-height: 120px; color: #1f2937; }
+.input-wrapper textarea::placeholder { color: #9ca3af; }
+.input-actions { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
+.btn-attach { background: none; border: none; color: #6b7280; cursor: pointer; padding: 4px 6px; border-radius: 6px; display: flex; align-items: center; gap: 4px; font-size: 0.8rem; transition: color 0.15s, background 0.15s; }
+.btn-attach:hover { color: #4f46e5; background: #f3f4f6; }
+.btn-send { padding: 10px 22px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.btn-send:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 18px -5px rgba(124,58,237,0.35); }
+.btn-send:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.bg-task-toast { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; align-items: center; gap: 10px; background: #1e1b4b; color: #e0e7ff; padding: 12px 16px; border-radius: 12px; font-size: 0.84rem; box-shadow: 0 6px 24px rgba(0,0,0,0.35); max-width: 380px; animation: slideUp 0.3s ease; border: 1px solid rgba(167,139,250,0.3); }
+.bg-task-toast em { font-style: normal; color: #a5b4fc; }
+.bg-task-toast button { background: rgba(255,255,255,0.12); border: none; color: #e0e7ff; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.78rem; white-space: nowrap; transition: background 0.15s; }
+.bg-task-toast button:hover { background: rgba(255,255,255,0.22); }
+
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.empty-state { text-align: center; color: #9ca3af; margin: auto; padding: 40px 20px; }
+.empty-state svg { width: 72px; height: 72px; margin-bottom: 14px; opacity: 0.3; display: block; margin-left: auto; margin-right: auto; }
+.empty-state p { font-size: 0.95rem; }
+input[type="file"] { display: none; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+</style>
+<base target="_blank" rel="noopener noreferrer">
 </head>
 <body>
-<div class="container">
 
-    <div class="header">
-        <p class="header-tag">PFE 2026 · Document Intelligence</p>
-        <h1>Document <span>Processor</span></h1>
-        <p>Upload PDF, Word, Excel, HTML or Images — extract text or tables using smart mode selection.</p>
-    </div>
-
-    <div class="card">
-        <p class="section-label">01 · Select File</p>
-        <div class="drop-zone" id="dropZone">
-            <input type="file" id="fileInput"
-                   accept=".pdf,.docx,.xlsx,.html,.htm,.png,.jpg,.jpeg,.gif,.bmp,.tiff,.webp"
-                   onchange="onFileChange(this)">
-            <div class="drop-zone-icon">📂</div>
-            <div class="drop-zone-label">Drop a file here or click to browse</div>
-            <div class="drop-zone-sub">PDF · DOCX · XLSX · HTML · PNG · JPG · Max 50 MB</div>
-            <div class="file-chosen" id="fileChosen"></div>
+<div class="app">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            Chat History
+            <span id="historyCount"></span>
         </div>
-
-        <div style="margin-top: 24px;">
-            <p class="section-label">02 · Extraction Mode</p>
-            <div class="mode-grid">
-                <label class="mode-btn active" id="btn-brief">
-                    <input type="radio" name="mode" value="brief" checked>
-                    <div class="mode-icon">⚡</div>
-                    <span class="mode-name">Brief</span>
-                    <span class="mode-desc">Title + first 2 pages</span>
-                    <span class="mode-badge">&lt; 5 s</span>
-                </label>
-                <label class="mode-btn" id="btn-summary">
-                    <input type="radio" name="mode" value="summary">
-                    <div class="mode-icon">📋</div>
-                    <span class="mode-name">Summary</span>
-                    <span class="mode-desc">First 5 + headers + last 2</span>
-                    <span class="mode-badge">&lt; 10 s</span>
-                </label>
-                <label class="mode-btn" id="btn-full">
-                    <input type="radio" name="mode" value="full">
-                    <div class="mode-icon">🗂️</div>
-                    <span class="mode-name">Full</span>
-                    <span class="mode-desc">All pages for RAG indexing</span>
-                    <span class="mode-badge">background</span>
-                </label>
-                <label class="mode-btn table-mode" id="btn-table">
-                    <input type="radio" name="mode" value="table">
-                    <div class="mode-icon">📊</div>
-                    <span class="mode-name">Tables</span>
-                    <span class="mode-desc">Extract all tables + context</span>
-                    <span class="mode-badge">factures · contrats</span>
-                </label>
-            </div>
-        </div>
-
-        <button class="submit-btn" id="submitBtn" onclick="doUpload()">
-            ↑ Upload &amp; Extract
-        </button>
-
-        <div class="progress-wrap" id="progressWrap">
-            <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
-            <p class="progress-msg" id="progressMsg">Processing...</p>
+        <div class="history-list" id="historyList">
+            <div class="history-empty">No past chats yet</div>
         </div>
     </div>
 
-    <div class="error-card" id="errorCard"></div>
-
-    <div class="result-card card" id="resultCard">
-        <p class="section-label">03 · Extraction Result</p>
-        <div class="stats" id="statsRow"></div>
-        <div class="pages-line" id="pagesLine"></div>
-
-        <!-- Tabs — only shown in table mode -->
-        <div class="tabs" id="tabsRow" style="display:none">
-            <button class="tab-btn active" onclick="switchTab('text')">📄 Text</button>
-            <button class="tab-btn table-tab" onclick="switchTab('tables')">📊 Tables</button>
-            <button class="tab-btn table-tab" onclick="switchTab('json')">{ } JSON</button>
-        </div>
-
-        <!-- Text tab -->
-        <div class="tab-panel active" id="tab-text">
-            <div class="content-header">
-                <span class="content-label">Extracted Text</span>
-                <button class="copy-btn" onclick="copyContent()">Copy</button>
+    <div class="container">
+        <div class="header">
+            <h1>Document AI Assistant</h1>
+            <div class="header-right">
+                <button class="btn-new-chat" onclick="newChat()">+ New Chat</button>
+                <span class="badge">PFE2026</span>
             </div>
-            <div class="content-box" id="contentBox"></div>
         </div>
 
-        <!-- Tables tab -->
-        <div class="tab-panel" id="tab-tables">
-            <div class="tables-wrap" id="tablesWrap"></div>
+        <div class="scanned-banner" id="scannedBanner">Scanned document detected — OCR is running in the background.</div>
+
+        <div class="session-info" id="sessionInfo" style="display:none;">
+            <span>Session: <code id="sessionIdDisplay"></code></span>
+            <button class="clear" onclick="clearChat()">Clear Chat</button>
         </div>
 
-        <!-- JSON tab -->
-        <div class="tab-panel" id="tab-json">
-            <div class="content-header">
-                <span class="content-label">Tables as JSON</span>
-                <button class="copy-btn" onclick="copyJson()">Copy JSON</button>
+        <div class="chat-container">
+            <div class="messages" id="messages"></div>
+
+            <div class="input-area">
+                <div class="input-row">
+                    <div class="input-wrapper" id="inputWrapper">
+                        <!-- File previews appear here, inside the input box -->
+                        <div class="file-preview-list" id="filePreviewList"></div>
+                        <textarea id="messageInput" rows="1" placeholder="Ask a question, or drag & drop a document here..." disabled></textarea>
+                        <div class="input-actions">
+                            <button class="btn-attach" onclick="document.getElementById('fileInput').click()" title="Attach document">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                                </svg>
+                                Attach
+                            </button>
+                            <button class="btn-attach" onclick="toggleDeepResearch()" title="Toggle Deep Research mode" id="deepResearchBtn" style="transition: all 0.2s;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                    <line x1="11" y1="8" x2="11" y2="14"/>
+                                    <line x1="8" y1="11" x2="14" y2="11"/>
+                                </svg>
+                                <span id="deepResearchLabel">Deep Research</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button id="sendBtn" class="btn-send" onclick="sendMessage()" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                        Send
+                    </button>
+                </div>
+                <input type="file" id="fileInput" accept=".pdf,.docx,.xlsx,.html,.htm,.png,.jpg,.jpeg,.gif,.bmp,.tiff,.webp">
             </div>
-            <div class="content-box" id="jsonBox"></div>
         </div>
     </div>
-
 </div>
 
 <script>
-/* ── Mode highlight ──────────────────────────── */
-document.querySelectorAll('input[name="mode"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        radio.closest('.mode-btn').classList.add('active');
-    });
-});
+// ═══════════════════════════════════════════════════════════════════
+// GLOBALS
+// ═══════════════════════════════════════════════════════════════════
 
-/* ── Drag & drop ─────────────────────────────── */
-const dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f) {
-        const dt = new DataTransfer(); dt.items.add(f);
-        document.getElementById('fileInput').files = dt.files;
-        onFileChange(document.getElementById('fileInput'));
-    }
-});
+marked.setOptions({ breaks: true, gfm: true });
+marked.use({ renderer: { html() { return ''; } } });
 
-function onFileChange(input) {
-    const f = input.files[0];
-    document.getElementById('fileChosen').textContent =
-        f ? `✓ ${f.name} (${(f.size/1024).toFixed(1)} KB)` : '';
+/* NOTE: Configure this for your production backend */
+const API_BASE = window.location.hostname === 'localhost' 
+    ? "http://127.0.0.1:8000" 
+    : (window.API_BASE_URL || "/api"); /* Set API_BASE_URL in production env */
+
+let sessionId          = null;
+let attachedFiles      = [];
+let isProcessing       = false;
+let isDeepResearchMode = false;
+let currentDocId       = null;
+const backgroundTasks  = {};
+const _sourceRegistry  = {};
+
+const fileInput      = document.getElementById('fileInput');
+const messages       = document.getElementById('messages');
+const messageInput   = document.getElementById('messageInput');
+const sendBtn        = document.getElementById('sendBtn');
+const inputWrapper   = document.getElementById('inputWrapper');
+const filePreviewList= document.getElementById('filePreviewList');
+const sessionInfo    = document.getElementById('sessionInfo');
+const sessionIdDisp  = document.getElementById('sessionIdDisplay');
+const scannedBanner  = document.getElementById('scannedBanner');
+const historyList    = document.getElementById('historyList');
+const historyCount   = document.getElementById('historyCount');
+
+// ═══════════════════════════════════════════════════════════════════
+// SESSION PERSISTENCE
+// ═══════════════════════════════════════════════════════════════════
+
+function saveSessionState() {
+    if (!sessionId) return;
+    localStorage.setItem('active_session_id', sessionId);
+    const url = new URL(window.location);
+    url.searchParams.set('session', sessionId);
+    window.history.replaceState({}, '', url);
 }
 
-/* ── Upload ──────────────────────────────────── */
-const PROGRESS_MSGS = {
-    brief:   'Reading first pages...',
-    summary: 'Detecting section headers and extracting key pages...',
-    full:    'Processing all pages...',
-    table:   'Detecting and extracting tables...',
-};
+function restoreSessionState() {
+    const p = new URLSearchParams(window.location.search);
+    return p.get('session') || localStorage.getItem('active_session_id') || null;
+}
 
-async function doUpload() {
-    const fileInput = document.getElementById('fileInput');
-    const mode      = document.querySelector('input[name="mode"]:checked').value;
-    if (!fileInput.files[0]) { alert('Please select a file first.'); return; }
+function clearSessionState() {
+    localStorage.removeItem('active_session_id');
+    const url = new URL(window.location);
+    url.searchParams.delete('session');
+    window.history.replaceState({}, '', url);
+}
 
-    hide('resultCard'); hide('errorCard');
-    show('progressWrap');
-    document.getElementById('progressMsg').textContent = PROGRESS_MSGS[mode];
-    document.getElementById('submitBtn').disabled = true;
+// ═══════════════════════════════════════════════════════════════════
+// SOURCE PERSISTENCE
+// ═══════════════════════════════════════════════════════════════════
 
-    const fd = new FormData();
-    fd.append('file', fileInput.files[0]);
-    fd.append('mode', mode);
-
+function savePendingSources(sid, answerText, sources) {
+    if (!sid || !sources || !sources.length) return;
     try {
-        const res  = await fetch('http://localhost:8000/documents/upload', { method: 'POST', body: fd });
-        const data = await res.json();
-        hide('progressWrap');
-        document.getElementById('submitBtn').disabled = false;
-
-        if (!res.ok || data.status === 'error') {
-            showError(data.detail || data.message || 'Unknown error');
-            return;
+        const key  = `pfe_sources_${sid}`;
+        const prev = JSON.parse(localStorage.getItem(key) || '[]');
+        const fp   = (answerText || '').slice(0, 120);
+        if (!prev.some(e => e.fp === fp)) {
+            prev.push({ fp, sources });
+            localStorage.setItem(key, JSON.stringify(prev));
         }
-        renderResult(data, mode);
-    } catch (err) {
-        hide('progressWrap');
-        document.getElementById('submitBtn').disabled = false;
-        showError('Could not reach the API — is the server running on localhost:8000?\n' + err.message);
+    } catch (e) {  }
+}
+
+function lookupCachedSources(sid, answerText) {
+    if (!sid || !answerText) return [];
+    try {
+        const cache = JSON.parse(localStorage.getItem(`pfe_sources_${sid}`) || '[]');
+        const fp    = (answerText || '').slice(0, 120);
+        const entry = cache.find(e => e.fp === fp);
+        return entry ? entry.sources : [];
+    } catch { return []; }
+}
+
+function clearCachedSources(sid) {
+    if (sid) localStorage.removeItem(`pfe_sources_${sid}`);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════════════
+
+function showTyping() {
+    const d = document.createElement('div');
+    d.className = 'message assistant typing';
+    d.id = 'typing';
+    d.innerHTML = '<span></span><span></span><span></span>';
+    messages.appendChild(d);
+    messages.scrollTop = messages.scrollHeight;
+}
+function hideTyping() { document.getElementById('typing')?.remove(); }
+function clearMessages() { messages.innerHTML = ''; }
+
+function showEmptyState() {
+    messages.innerHTML = `
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            <p>Upload a document to start chatting</p>
+        </div>`;
+}
+
+function escHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function formatDate(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function formatBytes(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' kb';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FILE PREVIEW INSIDE INPUT
+// ═══════════════════════════════════════════════════════════════════
+
+function renderFilePreviewList() {
+    filePreviewList.innerHTML = '';
+    const pendingFiles = attachedFiles.filter(f => !f.uploaded);
+    pendingFiles.forEach((f, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'file-preview-chip';
+        chip.innerHTML = `
+            <div class="file-preview-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+            </div>
+            <div class="file-preview-info">
+                <div class="file-preview-name" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
+                <div class="file-preview-size">${f.file ? f.file.name.split('.').pop().toUpperCase() + ' · ' + formatBytes(f.file.size) : f.name.split('.').pop().toUpperCase()}</div>
+            </div>
+            <button class="file-preview-remove" onclick="removeAttachedFile(attachedFiles.indexOf(f))" title="Remove">×</button>`;
+        filePreviewList.appendChild(chip);
+    });
+}
+
+function removeAttachedFile(i) {
+    attachedFiles.splice(i, 1);
+    renderFilePreviewList();
+    if (!attachedFiles.length && !sessionId) {
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        showEmptyState();
     }
 }
 
-/* ── Render ──────────────────────────────────── */
-let _currentTables = [];
+// ═══════════════════════════════════════════════════════════════════
+// EXCERPT PANEL
+// ═══════════════════════════════════════════════════════════════════
 
-function renderResult(data, mode) {
-    const ex = data.extraction || {};
-    _currentTables = ex.tables || [];
+function highlightTermsInText(text, terms) {
+    if (!terms || !terms.length) return escHtml(text);
+    const escaped = terms.map(t => (t||'').trim()).filter(t => t.length > 1)
+        .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    if (!escaped.length) return escHtml(text);
+    const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
+    return text.split(pattern).map((part, i) =>
+        i % 2 === 1 ? `<mark class="excerpt-highlight">${escHtml(part)}</mark>` : escHtml(part)
+    ).join('');
+}
 
-    // Stats
-    const method = ex.extraction_method || 'unknown';
-    let tablesStatHtml = '';
-    if (mode === 'table') {
-        tablesStatHtml = `
-        <div class="stat">
-            <div class="stat-label">Tables found</div>
-            <div class="stat-value warning">${ex.tables_found ?? 0}</div>
+function extractHighlightTerms(answerText) {
+    if (!answerText) return [];
+    const terms = new Set();
+    const nums = answerText.match(/\b\d[\d\s.,]*\d\b|\b\d+\b/g) || [];
+    nums.forEach(n => { terms.add(n.replace(/\s/g, '')); terms.add(n); });
+    const units = answerText.match(/\b(dinars?|millimes?|TND|DT|EUR|USD|TTC|HT|TVA|total|montant|prix|مبلغ|دينار|مليم)\b/gi) || [];
+    units.forEach(u => terms.add(u));
+    const caps = answerText.match(/\b[A-ZÀ-Ü][a-zà-ü]{2,}\b/g) || [];
+    caps.forEach(c => terms.add(c));
+    return [...terms].filter(t => t.length > 1);
+}
+
+function showExcerptPanel(src, answerText) {
+    document.getElementById('excerpt-panel')?.remove();
+    const text = src.excerpt || src.content || '';
+    if (!text) return;
+    const terms       = extractHighlightTerms(answerText || '');
+    const highlighted = highlightTermsInText(text, terms);
+    const hasHL       = terms.length > 0 && text.toLowerCase() !== highlighted.toLowerCase();
+    const scoreHTML   = src.score ? `<span class="excerpt-panel-score">Score: ${(src.score*100).toFixed(0)}%</span>` : '';
+    const pageHTML    = src.page  ? `<span class="excerpt-panel-page">Page ${escHtml(String(src.page))}</span>` : '';
+    const panel = document.createElement('div');
+    panel.id = 'excerpt-panel';
+    panel.className = 'excerpt-panel';
+    panel.innerHTML = `
+        <div class="excerpt-panel-header">
+            <div style="flex:1;min-width:0;">
+                <div class="excerpt-panel-title">📄 ${escHtml(src.title)}</div>
+                <div class="excerpt-panel-meta">${pageHTML}${scoreHTML}</div>
+            </div>
+            <button class="excerpt-panel-close" onclick="document.getElementById('excerpt-panel').remove()">×</button>
+        </div>
+        <div class="excerpt-panel-body">
+            ${hasHL ? `<div class="excerpt-panel-hint">✨ Highlighted text shows where the answer was found</div>` : ''}
+            <blockquote>${highlighted}</blockquote>
         </div>`;
-    }
+    document.body.appendChild(panel);
+    requestAnimationFrame(() => {
+        const first = panel.querySelector('.excerpt-highlight');
+        if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+    setTimeout(() => {
+        function closePanel(e) { if (!panel.contains(e.target)) { panel.remove(); document.removeEventListener('click', closePanel); } }
+        document.addEventListener('click', closePanel);
+    }, 100);
+}
 
-    document.getElementById('statsRow').innerHTML = `
-        <div class="stat">
-            <div class="stat-label">File</div>
-            <div class="stat-value" style="font-size:12px">${esc(data.file_name)}</div>
-        </div>
-        <div class="stat">
-            <div class="stat-label">Mode</div>
-            <div class="stat-value accent">${data.mode}</div>
-        </div>
-        <div class="stat">
-            <div class="stat-label">Pages read</div>
-            <div class="stat-value">${ex.pages_read ?? '—'}<span style="color:var(--muted);font-size:12px"> / ${ex.pages_total ?? '—'}</span></div>
-        </div>
-        <div class="stat">
-            <div class="stat-label">Words</div>
-            <div class="stat-value success">${(ex.word_count ?? 0).toLocaleString()}</div>
-        </div>
-        ${tablesStatHtml}
-        <div class="stat">
-            <div class="stat-label">Time</div>
-            <div class="stat-value">${data.processing_time_ms ?? 0} ms</div>
-        </div>
-        <div class="stat">
-            <div class="stat-label">Method</div>
-            <div class="stat-value"><span class="method-badge ${method.split('+')[0]}">${method}</span></div>
+function showExcerptById(renderKey, sourceId) {
+    const srcs = _sourceRegistry[renderKey];
+    if (!srcs) return;
+    const src = srcs.find(s => s.id === sourceId);
+    const answerText = _sourceRegistry[renderKey + '_answer'] || '';
+    if (src) showExcerptPanel(src, answerText);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DOCUMENT CARD (in chat, after sending)
+// ═══════════════════════════════════════════════════════════════════
+
+function addDocumentCard(fileName, beforeElement = null) {
+    const ext = fileName.split('.').pop().toUpperCase();
+    const d = document.createElement('div');
+    d.className = 'message user doc-card-message';
+    d.innerHTML = `
+        <div class="doc-card">
+            <div class="doc-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+            </div>
+            <div class="doc-card-text">
+                <div class="doc-card-name">${escHtml(fileName)}</div>
+                <div class="doc-card-type">${ext} Document</div>
+            </div>
         </div>`;
-
-    // Pages chips
-    const pages = ex.pages_selected || [];
-    document.getElementById('pagesLine').innerHTML = pages.length
-        ? `<span class="pages-line-label">Pages:</span>` + pages.map(p => `<span class="page-chip">p${p}</span>`).join('')
-        : '';
-
-    // Text content
-    document.getElementById('contentBox').textContent = ex.content || '(no content extracted)';
-
-    // Tabs — only in table mode
-    const tabsRow = document.getElementById('tabsRow');
-    if (mode === 'table') {
-        tabsRow.style.display = 'flex';
-        renderTables(_currentTables);
-        document.getElementById('jsonBox').textContent =
-            JSON.stringify(_currentTables.map(t => ({ page: t.page, table: t.table_index, data: t.json })), null, 2);
-        switchTab('tables');   // default to tables tab in table mode
+    if (beforeElement && beforeElement.parentNode) {
+        messages.insertBefore(d, beforeElement);
     } else {
-        tabsRow.style.display = 'none';
-        switchTab('text');
+        messages.appendChild(d);
     }
-
-    show('resultCard');
+    messages.scrollTop = messages.scrollHeight;
+    return d;
 }
 
-function renderTables(tables) {
-    const wrap = document.getElementById('tablesWrap');
-    if (!tables || tables.length === 0) {
-        wrap.innerHTML = `<div class="no-tables">⚠️ No tables detected in this document.</div>`;
+// ═══════════════════════════════════════════════════════════════════
+// DRAG & DROP
+// ═══════════════════════════════════════════════════════════════════
+
+inputWrapper.addEventListener('dragover',  e => { e.preventDefault(); inputWrapper.classList.add('dragover'); });
+inputWrapper.addEventListener('dragleave', ()  => inputWrapper.classList.remove('dragover'));
+inputWrapper.addEventListener('drop', e => { e.preventDefault(); inputWrapper.classList.remove('dragover'); if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFiles(e.target.files); });
+
+function handleFiles(fileList) {
+    const valid = ['.pdf','.docx','.xlsx','.html','.htm','.png','.jpg','.jpeg','.gif','.bmp','.tiff','.webp'];
+    for (const file of fileList) {
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (!valid.includes(ext)) { addMessage(`Unsupported file type: ${file.name}`, 'assistant'); continue; }
+        attachedFiles.push({ name: file.name, file, uploaded: false, doc_id: null });
+    }
+    renderFilePreviewList();
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    messageInput.focus();
+    if (!sessionId && attachedFiles.length === 1) {
+        clearMessages();
+        addMessage('Type a question and press Send, or press Send with an empty input to get a brief summary.', 'assistant');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SEND DISPATCHER
+// ═══════════════════════════════════════════════════════════════════
+
+let _lastText = null, _lastTime = 0;
+
+async function sendMessage() {
+    const text = messageInput.value.trim();
+    if (isProcessing) return;
+    const now = Date.now();
+    if (text === _lastText && now - _lastTime < 3000) return;
+
+    if (isDeepResearchMode) {
+        if (!text) { addMessage('Please type a research question first.', 'assistant'); return; }
+        const pending = attachedFiles.filter(f => !f.uploaded);
+        let msgAdded = false;
+        if (pending.length) {
+            // Show document card FIRST, then text message below it
+            for (const f of pending) addDocumentCard(f.name);
+            addMessage(text, 'user'); msgAdded = true;
+            filePreviewList.innerHTML = '';
+            for (const f of pending) { await uploadFile(f.file, null, 'deep_research'); f.uploaded = true; }
+            attachedFiles = attachedFiles.filter(f => !f.uploaded);
+            renderFilePreviewList();
+        }
+        _lastText = text; _lastTime = now;
+        await sendDeepResearch(text, msgAdded);
         return;
     }
 
-    wrap.innerHTML = tables.map(t => {
-        const rows = t.json || [];
-        if (!rows.length) return '';
-        const headers = Object.keys(rows[0]);
-        const headerHtml = headers.map(h => `<th>${esc(h)}</th>`).join('');
-        const rowsHtml   = rows.map(row =>
-            `<tr>${headers.map(h => `<td>${esc(row[h] ?? '')}</td>`).join('')}</tr>`
-        ).join('');
+    if (!text && !attachedFiles.length) { addMessage('Please type a question or attach a document.', 'assistant'); return; }
 
-        return `
-        <div class="table-card">
-            <div class="table-card-header">
-                <span class="table-card-title">📊 Page ${t.page} — Table ${t.table_index}</span>
-                <span class="table-card-meta">${t.row_count} rows · ${t.col_count} cols · via ${t.source}</span>
+    const pending = attachedFiles.filter(f => !f.uploaded);
+    if (text && !pending.length) { addMessage(text, 'user'); _lastText = text; _lastTime = now; }
+
+    messageInput.value = ''; messageInput.style.height = 'auto';
+
+    if (pending.length) {
+        // Show document card FIRST, then text message below it
+        for (const f of pending) addDocumentCard(f.name);
+        // If there's text, show it after the document card
+        if (text) { addMessage(text, 'user'); }
+        // Clear preview chips — doc card in chat is the reference now
+        filePreviewList.innerHTML = '';
+        for (const f of pending) { await uploadFile(f.file, text && f === pending[pending.length-1] ? text : null); f.uploaded = true; }
+        attachedFiles = attachedFiles.filter(f => !f.uploaded);
+        renderFilePreviewList();
+        if (text && pending[pending.length-1]) return;
+    }
+
+    if (sessionId && text) await askStreaming(text, sessionId);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UPLOAD
+// ═══════════════════════════════════════════════════════════════════
+
+async function uploadFile(file, prompt, source = null) {
+    isProcessing = true; sendBtn.disabled = true; messageInput.disabled = true;
+    const isSilent = source === 'deep_research' && !prompt;
+    if (!isSilent) showTyping();
+    const fd = new FormData();
+    fd.append('file', file); fd.append('mode', 'brief'); fd.append('index', 'true');
+    if (prompt)    fd.append('prompt', prompt);
+    if (sessionId) fd.append('session_id', sessionId);
+    if (source)    fd.append('source', source);
+    try {
+        const res  = await fetch(`${API_BASE}/documents/upload`, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!isSilent) hideTyping();
+        if (!res.ok) throw new Error(data.detail || 'Upload failed');
+        const rid = data.doc_id || data.document_id;
+        if (rid) { const e = attachedFiles.find(f => f.name === file.name); if (e) e.doc_id = rid; }
+        const isNew = !sessionId;
+        sessionId = data.session_id; saveSessionState();
+        if (data.doc_id) currentDocId = data.doc_id;
+        sessionInfo.style.display = 'flex'; sessionIdDisp.textContent = sessionId.slice(0,8)+'...';
+        if (data.scanned_note) scannedBanner.style.display = 'block';
+        if (!isSilent) {
+            if (data.status === 'answered') {
+                const src = data.sources || [];
+                addMessage(data.answer, 'assistant', false, src);
+                savePendingSources(sessionId, data.answer, src);
+            }
+            else if (data.status === 'summarized') addMessage(data.summary || data.message, 'assistant', true);
+        }
+        if (isNew) loadHistory();
+    } catch (err) {
+        if (!isSilent) hideTyping();
+        addMessage(err.message.includes('429') ? 'API quota reached. Wait ~40s and try again.' : `Error: ${err.message}`, 'assistant');
+    } finally {
+        isProcessing = false; sendBtn.disabled = false; messageInput.disabled = false; messageInput.focus(); fileInput.value = '';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// STREAMING CHAT
+// ═══════════════════════════════════════════════════════════════════
+
+async function askStreaming(question, sid) {
+    isProcessing = true; sendBtn.disabled = true;
+    const bubble = document.createElement('div');
+    bubble.className = 'message assistant'; messages.appendChild(bubble);
+    messages.scrollTop = messages.scrollHeight;
+    const fd = new FormData(); fd.append('question', question); fd.append('session_id', sid);
+    let sources = [], fullText = '';
+    try {
+        const res = await fetch(`${API_BASE}/chat/ask/stream`, { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('Stream failed');
+        const reader = res.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
+        while (true) {
+            const { done, value } = await reader.read(); if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split('\n\n'); buffer = parts.pop();
+            for (const part of parts) {
+                let dl = '';
+                for (const line of part.split('\n')) { if (line.startsWith('data: ')) dl = line.slice(6).trim(); }
+                if (!dl) continue;
+                try {
+                    const ev = JSON.parse(dl);
+                    if (ev.sources !== undefined) { sources = ev.sources || []; }
+                    else if (ev.token !== undefined) { fullText += ev.token; bubble.innerHTML = `<div class="answer-body">${marked.parse(fullText)}<span style="display:inline-block;animation:blink 0.7s step-end infinite;color:#7c3aed;margin-left:2px">▍</span></div>`; messages.scrollTop = messages.scrollHeight; }
+                    else if (ev.done) { finishBubble(bubble, fullText, sources); loadHistory(); saveSessionState(); }
+                    else if (ev.error) throw new Error(ev.error);
+                } catch (e) {  }
+            }
+        }
+        if (!bubble.classList.contains('done')) { finishBubble(bubble, fullText, sources); saveSessionState(); }
+    } catch (err) { bubble.innerHTML = `<div style="color:#dc2626">Error: ${err.message}</div>`; }
+    finally { isProcessing = false; sendBtn.disabled = false; messageInput.focus(); }
+}
+
+function finishBubble(bubble, text, sources) {
+    bubble.classList.add('done');
+    bubble.innerHTML = formatAnswerWithSources(text, sources);
+    messages.scrollTop = messages.scrollHeight;
+    if (sessionId && sources && sources.length) savePendingSources(sessionId, text, sources);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SOURCE NORMALISATION + DEDUPLICATION
+// ═══════════════════════════════════════════════════════════════════
+
+function normalizeSources(raw) {
+    return (raw || []).map((s, i) => {
+        const isWeb = !!(s.url || s.type === 'web');
+        const id    = s.id ?? (i + 1);
+        let title   = s.title || s.name || s.file_name || s.file || '';
+        if (!title && isWeb && s.url) { try { title = new URL(s.url).hostname; } catch { title = s.url; } }
+        if (!title) title = `Source ${id}`;
+        let subtitle = '';
+        if (isWeb) { try { subtitle = new URL(s.url).hostname; } catch { subtitle = s.url || ''; } }
+        else if (s.page) subtitle = `Page ${s.page}`;
+        else if (s.subtitle) subtitle = s.subtitle;
+        return { id, title, subtitle, url: s.url||'', content: s.content||s.chunk||'', excerpt: s.excerpt||s.content||s.chunk||'', page: s.page||null, score: s.score||null, doc_id: s.doc_id||'', chunk_index: s.chunk_index??null, file: s.file_name||s.file||'', type: isWeb?'web':'document' };
+    });
+}
+
+function deduplicateSources(sources) {
+    const idRemap = {}, merged = [], fileMap = {};
+    sources.forEach(src => {
+        if (src.type === 'web') {
+            const key = src.url || src.title;
+            if (fileMap[key] !== undefined) { idRemap[src.id] = merged[fileMap[key]].id; }
+            else { const newId = merged.length+1; idRemap[src.id]=newId; fileMap[key]=merged.length; merged.push({...src,id:newId}); }
+        } else {
+            const key = src.file || src.title;
+            if (fileMap[key] !== undefined) {
+                const existing = merged[fileMap[key]];
+                idRemap[src.id] = existing.id;
+                if (src.excerpt && src.excerpt !== existing.excerpt) { existing.excerpt = existing.excerpt ? existing.excerpt+'\n\n---\n\n'+src.excerpt : src.excerpt; existing.content = existing.excerpt; }
+                if (src.score && (!existing.score || src.score > existing.score)) existing.score = src.score;
+                if (src.page && !existing._pages.includes(src.page)) { existing._pages.push(src.page); existing.subtitle = 'Pages '+existing._pages.join(', '); }
+            } else {
+                const newId = merged.length+1; idRemap[src.id]=newId; fileMap[key]=merged.length;
+                merged.push({...src,id:newId,_pages:src.page?[src.page]:[]});
+            }
+        }
+    });
+    return { dedupedSources: merged, idRemap };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FORMAT ANSWER + SOURCES
+// ═══════════════════════════════════════════════════════════════════
+
+function formatAnswerWithSources(text, rawSources) {
+    text = (text || '').replace(/\[Excerpt\s+[\d,\s]+\]/g, '').trim();
+    const normalized = normalizeSources(rawSources);
+    const { dedupedSources: sources, idRemap } = deduplicateSources(normalized);
+    const rk = `rk_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    _sourceRegistry[rk] = sources;
+    _sourceRegistry[rk+'_answer'] = text;
+    const idMap = {}; sources.forEach(s => { idMap[s.id] = s; });
+    let html = marked.parse(text);
+    html = html.replace(/(\[\d+\])(\[\d+\])+/g, m => { const nums=[...(m.matchAll(/\[(\d+)\]/g))].map(x=>x[1]); return `[${nums.join(',')}]`; });
+    html = html.replace(/\[(\d+(?:\s*,\s*\d+)*)\]/g, (_, numsStr) => {
+        const seen = new Set();
+        return numsStr.split(',').map(n => {
+            const origId = parseInt(n.trim()); const newId = idRemap[origId]??origId;
+            if (seen.has(newId)) return ''; seen.add(newId);
+            const src = idMap[newId]; if (!src) return `<sup class="citation-badge">${newId}</sup>`;
+            const hasEx = src.type==='document' && !!(src.excerpt||src.content);
+            const onclick = hasEx ? `onclick="showExcerptById('${rk}',${newId})"` : src.url ? `onclick="window.open('${escHtml(src.url)}','_blank')"` : '';
+            const cursor = hasEx||src.url ? 'cursor:pointer;' : '';
+            return `<sup class="citation-badge citation-link" ${onclick} style="${cursor}" title="${escHtml(src.title)}">${newId}</sup>`;
+        }).join('');
+    });
+    const answerCard = buildAnswerCard(text);
+    if (!sources.length) return `${answerCard}<div class="answer-body" data-rk="${rk}">${answerCard?'':html}</div>`;
+    const docSrcs = sources.filter(s=>s.type==='document');
+    const webSrcs = sources.filter(s=>s.type==='web');
+    let chips = '';
+    if (docSrcs.length) { chips += `<div class="sources-section-label">📄 Documents</div>`; chips += docSrcs.map(s=>buildSourceChip(s,rk)).join(''); }
+    if (webSrcs.length) { chips += `<div class="sources-section-label">🌐 Web</div>`;       chips += webSrcs.map(s=>buildSourceChip(s,rk)).join(''); }
+    return `${answerCard}${answerCard?'':`<div class="answer-body" data-rk="${rk}">${html}</div>`}
+        <details class="sources-collapsible" open>
+            <summary><div class="sources-header"><span>📚 Sources</span><span class="sources-count">${sources.length}</span></div></summary>
+            <div class="sources-box" data-rk="${rk}">${chips}</div>
+        </details>`;
+}
+
+function buildAnswerCard(text) {
+    if (!text) return '';
+    const clean = text.trim();
+    if (clean.length > 220 || clean.split('\n').length > 3) return '';
+    const moneyMatch = clean.match(/(\d[\d\s.,]*\d|\d+)\s*(dinars?|millimes?|TND|DT|EUR|USD|€|\$|£)/i);
+    const numMatch   = clean.match(/^[\d\s.,]+$/);
+    const dateMatch  = clean.match(/\b\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}\b/);
+    let icon='', label='Answer', value=clean, sub='';
+    if (moneyMatch) { icon='💰'; label='Amount'; sub=clean.replace(moneyMatch[0],'').replace(/^[:\s–-]+|[:\s–-]+$/g,'').trim(); value=moneyMatch[0].trim(); }
+    else if (numMatch) { icon='🔢'; label='Value'; value=clean; }
+    else if (dateMatch) { icon='📅'; label='Date'; value=dateMatch[0]; sub=clean.replace(dateMatch[0],'').replace(/^[:\s–-]+|[:\s–-]+$/g,'').trim(); }
+    else return '';
+    return `<div class="answer-card"><div class="answer-card-label">${icon} ${label}</div><div class="answer-card-value">${escHtml(value)}</div>${sub?`<div class="answer-card-sub">${escHtml(sub)}</div>`:''}</div>`;
+}
+
+function buildSourceChip(src, rk) {
+    const isWeb    = src.type === 'web';
+    const domain   = isWeb && src.url ? (()=>{ try{return new URL(src.url).hostname;}catch{return '';} })() : '';
+    const favicon  = isWeb && domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64` : '';
+    const fallback = isWeb ? (domain.charAt(0)||'W').toUpperCase() : (src.file||src.title||'S').charAt(0).toUpperCase();
+    const hasEx    = !isWeb && !!(src.excerpt || src.content);
+    const iconHtml = isWeb
+        ? `<img class="source-favicon" src="${favicon}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="source-favicon-fallback" style="display:none">${fallback}</div>`
+        : `<div class="source-favicon-fallback">${fallback}</div>`;
+    const onclick = isWeb ? (src.url?`onclick="window.open('${escHtml(src.url)}','_blank')"` : '') : (hasEx?`onclick="showExcerptById('${rk}',${src.id})"` : '');
+    const cursor  = (isWeb&&src.url)||hasEx ? 'cursor:pointer;' : '';
+    const badge   = isWeb ? 'background:#f3e8ff;color:#7c3aed;' : 'background:#eff6ff;color:#1d4ed8;';
+    const arrow   = isWeb&&src.url ? `<div class="source-arrow">→</div>` : (hasEx?`<div class="source-arrow" style="color:#a5b4fc;">📖</div>`:'');
+    const hint    = hasEx ? `<div class="source-hint">Click to view excerpt</div>` : '';
+    return `<div class="source-chip" ${onclick} style="${cursor}">
+        <span class="source-num-badge" style="${badge}">${src.id}</span>
+        ${iconHtml}
+        <div class="source-info">
+            <div class="source-title">${escHtml(src.title)}</div>
+            <div class="source-subtitle">${escHtml(src.subtitle)}</div>
+            ${hint}
+        </div>
+        ${arrow}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ADD MESSAGE
+// ═══════════════════════════════════════════════════════════════════
+
+function addMessage(text, sender, isSummary = false, sources = null) {
+    const d = document.createElement('div');
+    d.className = `message ${sender}`;
+    if (sender === 'user') {
+        d.textContent = text;
+    } else if (isSummary) {
+        // Document Brief: use formatAnswerWithSources if sources exist, otherwise plain summary
+        if (sources && sources.length) {
+            d.innerHTML = formatAnswerWithSources(text, sources);
+            // Wrap with summary header if not already present
+            if (!d.innerHTML.includes('summary-box')) {
+                d.innerHTML = `<div class="summary-box"><h3>📄 Document Brief</h3><div class="answer-body">${marked.parse(text||'')}</div></div><p style="margin-top:8px;font-size:0.88rem;color:#6b7280;">How can I help you with this document?</p>`;
+            }
+        } else {
+            d.innerHTML = `<div class="summary-box"><h3>📄 Document Brief</h3><div class="answer-body">${marked.parse(text||'')}</div></div><p style="margin-top:8px;font-size:0.88rem;color:#6b7280;">How can I help you with this document?</p>`;
+        }
+    } else if (sources && sources.length) {
+        d.innerHTML = formatAnswerWithSources(text, sources);
+    } else {
+        d.innerHTML = `<div class="answer-body">${marked.parse(text||'')}</div>`;
+    }
+    messages.appendChild(d);
+    messages.scrollTop = messages.scrollHeight;
+    return d;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DEEP RESEARCH TOGGLE
+// ═══════════════════════════════════════════════════════════════════
+
+function toggleDeepResearch() {
+    isDeepResearchMode = !isDeepResearchMode;
+    const btn = document.getElementById('deepResearchBtn');
+    const lbl = document.getElementById('deepResearchLabel');
+    if (isDeepResearchMode) {
+        btn.style.background='#f3e8ff'; btn.style.color='#7c3aed'; btn.style.borderColor='#c4b5fd';
+        lbl.textContent = 'Deep Research ON';
+        messageInput.placeholder = '🔬 Type your research question...';
+        messageInput.disabled = false; sendBtn.disabled = false; messageInput.focus();
+    } else {
+        btn.style.background=''; btn.style.color=''; btn.style.borderColor='';
+        lbl.textContent = 'Deep Research';
+        messageInput.placeholder = sessionId ? 'Ask a follow-up question...' : 'Ask a question, or drag & drop a document here...';
+        if (!sessionId && !attachedFiles.length) { messageInput.disabled=true; sendBtn.disabled=true; }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DEEP RESEARCH SEND
+// ═══════════════════════════════════════════════════════════════════
+
+async function sendDeepResearch(text, msgAdded = false) {
+    if (isProcessing) return;
+    if (!msgAdded) addMessage(text, 'user');
+    messageInput.value = ''; messageInput.style.height = 'auto';
+    isProcessing = true; sendBtn.disabled = true; messageInput.disabled = true;
+    const bubble   = createResearchBubble('🔬 Submitting research task...');
+    const ownerSid = sessionId;
+    const docIds   = attachedFiles.filter(f=>f.uploaded&&f.doc_id).map(f=>f.doc_id);
+    try {
+        const res = await fetch(`${API_BASE}/research/query`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question:text,session_id:sessionId,language:'auto',session_has_documents:docIds.length>0,doc_id:docIds[0]||null,doc_ids:docIds}) });
+        if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
+        const { task_id } = await res.json();
+        if (!task_id) throw new Error('No task_id returned');
+        startBackgroundPoller(task_id, ownerSid, text, bubble);
+    } catch (err) {
+        bubble.innerHTML = `<div style="color:#dc2626">🔬 Research error: ${escHtml(err.message)}</div>`;
+        isProcessing=false; sendBtn.disabled=false; messageInput.disabled=false; messageInput.focus();
+    }
+}
+
+function createResearchBubble(msg) {
+    const b = document.createElement('div');
+    b.className = 'message assistant research-bubble';
+    b.innerHTML = researchStatusHTML(msg);
+    messages.appendChild(b); messages.scrollTop = messages.scrollHeight;
+    return b;
+}
+function researchStatusHTML(msg) {
+    return `<div class="typing"><span></span><span></span><span></span></div><div style="font-size:0.82rem;color:#6b7280;margin-top:6px;">${escHtml(msg)}</div>`;
+}
+
+function startBackgroundPoller(task_id, ownerSid, question, liveBubble) {
+    backgroundTasks[task_id] = { task_id, ownerSessionId:ownerSid, question, bubble:liveBubble, done:false, result:null };
+    const task = backgroundTasks[task_id];
+    const iv = setInterval(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/research/status/${task_id}`);
+            if (!res.ok) throw new Error(`Status ${res.status}`);
+            const result = await res.json(); task.result = result;
+            if (result.status==='pending') updateBubbleIfVisible(task, researchStatusHTML('⏳ Queued...'));
+            else if (result.status==='running') updateBubbleIfVisible(task, researchStatusHTML(`🔍 ${result.message||'Researching...'}`));
+            else if (result.status==='done'||result.status==='error') {
+                clearInterval(iv); task.done = true;
+                const rsid = result.session_id||ownerSid;
+                if (rsid&&!sessionId) { sessionId=rsid; sessionInfo.style.display='flex'; sessionIdDisp.textContent=sessionId.slice(0,8)+'...'; saveSessionState(); }
+                if (task.bubble&&document.body.contains(task.bubble)) { renderResearchResult(task.bubble,result); messages.scrollTop=messages.scrollHeight; }
+                else showBgToast(task_id,question,rsid,result.status);
+                if (result.status==='done'&&result.sources?.length) {
+                    try { await fetch(`${API_BASE}/research/session/${rsid||ownerSid}/save-sources`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sources:result.sources,answer:result.answer})}); } catch(e){}
+                }
+                loadHistory(); setTimeout(()=>delete backgroundTasks[task_id],30000);
+                isProcessing=false; sendBtn.disabled=false; messageInput.disabled=false; messageInput.focus(); highlightActiveSession(sessionId);
+            }
+        } catch (err) {
+             clearInterval(iv); task.done=true;
+            updateBubbleIfVisible(task,`<div style="color:#dc2626">🔬 Poll error: ${escHtml(err.message)}</div>`);
+            isProcessing=false; sendBtn.disabled=false;
+        }
+    }, 3000);
+    backgroundTasks[task_id].intervalId = iv;
+    isProcessing=false; sendBtn.disabled=false; messageInput.disabled=false; messageInput.focus();
+}
+
+function updateBubbleIfVisible(task, html) {
+    if (task.bubble&&document.body.contains(task.bubble)) { task.bubble.innerHTML=html; messages.scrollTop=messages.scrollHeight; }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GUARDRAIL
+// ═══════════════════════════════════════════════════════════════════
+
+function isGuardrailMessage(text) {
+    const t = (text || '').toLowerCase();
+    // Guardrail is a REJECTION message - it must be about the AI's limitations
+    // NOT just any text containing these words
+    const isRejection = (
+        t.includes('specialized in business documents') ||
+        t.includes('spécialisé dans les documents') ||
+        t.includes('spécialisé dans les documents professionnels') ||
+        t.includes('spécialisé dans les documents commerciaux') ||
+        t.includes('cannot help') ||
+        t.includes('ne peux pas répondre') ||
+        t.includes('ne peux pas vous aider') ||
+        t.includes('ne peux pas aider') ||
+        t.includes('لا أستطيع') ||
+        t.includes('je suis spécialisé') ||
+        t.includes('i am specialized') ||
+        t.includes('off-topic') ||
+        t.includes('hors sujet')
+    );
+    // But make sure it's NOT a normal document answer that happens to contain these words
+    // A normal answer about a document won't say "I am specialized" or "I cannot help"
+    const isNormalAnswer = (
+        t.includes('le document est') ||
+        t.includes('le document présente') ||
+        t.includes('le montant') ||
+        t.includes('la facture') ||
+        t.includes('le contrat') ||
+        t.includes('le rapport') ||
+        t.includes('le devis') ||
+        t.includes('voici un résumé') ||
+        t.includes('voici un bref résumé') ||
+        t.includes('document brief') ||
+        t.includes('points principaux') ||
+        t.includes('conclusions clés')
+    );
+    return isRejection && !isNormalAnswer;
+}
+function detectGuardrailLanguage(text) {
+    if ((text||'').includes('spécialisé')) return 'fr';
+    if ((text||'').includes('متخصص'))      return 'ar';
+    return 'en';
+}
+function getLocalizedGuardrail(lang) {
+    return {en:"I am specialized in business documents (invoices, contracts, reports, agreements, financial statements). Please upload a business document or ask a question related to your documents.",fr:"Je suis spécialisé dans les documents professionnels (factures, contrats, rapports, devis, états financiers). Veuillez télécharger un document professionnel ou poser une question relative à vos documents.",ar:"أنا متخصص في الوثائق التجارية فقط (الفواتير، العقود، التقارير، عروض الأسعار، القوائم المالية). لا أستطيع الإجابة على هذا السؤال."}[lang]||"I am specialized in business documents only.";
+}
+function getGuardrailTitle(lang) {
+    return {en:"Off-topic question detected",fr:"Question hors sujet détectée",ar:"تم اكتشاف سؤال خارج الموضوع"}[lang]||"Off-topic";
+}
+function renderGuardrailCard(lang) {
+    const isRTL=lang==='ar';
+    return `<div class="guardrail-card" dir="${isRTL?'rtl':'ltr'}" style="${isRTL?'border-left:none;border-right:4px solid #f59e0b;text-align:right;':''}"><div class="guardrail-title"><span class="guardrail-icon">🛡️</span><span>${escHtml(getGuardrailTitle(lang))}</span></div><div class="guardrail-body">${escHtml(getLocalizedGuardrail(lang))}</div></div>`;
+}
+function renderGuardrailMessage(container, lang) {
+    const d=document.createElement('div'); d.className='message assistant';
+    d.innerHTML=renderGuardrailCard(lang); container.appendChild(d); container.scrollTop=container.scrollHeight; return d;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER RESEARCH RESULT
+// ═══════════════════════════════════════════════════════════════════
+
+function renderResearchResult(bubble, result) {
+    if (!bubble||!document.body.contains(bubble)) return;
+    const text=result.answer||'', sources=result.sources||[];
+    if (isGuardrailMessage(text)) { bubble.innerHTML=renderGuardrailCard(detectGuardrailLanguage(text)); }
+    else if (result.status==='error') { bubble.innerHTML=`<div style="color:#dc2626">🔬 Research error: ${escHtml(text)}</div>`; }
+    else { bubble.innerHTML=formatAnswerWithSources(text,sources); if(sessionId&&sources.length) savePendingSources(sessionId,text,sources); }
+    bubble.classList.add('done');
+}
+
+function showBgToast(task_id, question, sid, status) {
+    const t=document.createElement('div'); t.className='bg-task-toast';
+    const q=question.length>50?question.slice(0,47)+'...':question;
+    t.innerHTML=`<span>${status==='done'?'✅':'❌'} Research complete: <em>${escHtml(q)}</em></span>${sid?`<button onclick="loadPastSession('${sid}','Research','research');removeToast(this)">View</button>`:''}<button onclick="removeToast(this)">✕</button>`;
+    document.body.appendChild(t); setTimeout(()=>t.remove(),12000);
+}
+function removeToast(btn) { btn.closest('.bg-task-toast')?.remove(); }
+
+// ═══════════════════════════════════════════════════════════════════
+// NEW CHAT
+// ═══════════════════════════════════════════════════════════════════
+
+function clearChat() { newChat(); }
+function newChat() {
+    sessionId=null; attachedFiles=[]; currentDocId=null; isProcessing=false;
+    clearSessionState();
+    if (isDeepResearchMode) toggleDeepResearch();
+    sessionInfo.style.display='none'; scannedBanner.style.display='none';
+    filePreviewList.innerHTML=''; messageInput.value=''; messageInput.style.height='auto';
+    messageInput.disabled=true; messageInput.placeholder='Ask a question, or drag & drop a document here...';
+    sendBtn.disabled=true;
+    clearMessages(); showEmptyState(); highlightActiveSession(null);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════════════════════════════
+
+async function loadHistory() {
+    try { const r=await fetch(`${API_BASE}/documents/history`); if(!r.ok)return; const d=await r.json(); renderHistory(d.sessions||[]); }
+    catch(e) {  }
+}
+
+function renderHistory(sessions) {
+    historyCount.textContent = sessions.length ? `${sessions.length} chats` : '';
+    if (!sessions.length) { historyList.innerHTML='<div class="history-empty">No past chats yet</div>'; return; }
+    historyList.innerHTML = sessions.map(s => {
+        const isR=s.session_type==='research', icon=isR?'🔬 ':'📄 ', lbl=isR?'Research':'Document';
+        const run=Object.values(backgroundTasks).some(t=>!t.done&&t.ownerSessionId===s.session_id)?'<span class="running-badge">⏳</span>':'';
+        return `<div class="history-item ${s.session_id===sessionId?'active':''}" id="hi-${s.session_id}">
+            <div class="hi-content" onclick="loadPastSession('${s.session_id}','${escHtml(s.title)}','${s.session_type||'document'}')">
+                <div class="hi-title">${icon}${escHtml(s.title)} ${run}</div>
+                <div class="hi-meta">${lbl} · ${s.message_count} msg · ${formatDate(s.updated_at)}</div>
             </div>
-            <div class="table-card-body">
-                <table class="extracted-table">
-                    <thead><tr>${headerHtml}</tr></thead>
-                    <tbody>${rowsHtml}</tbody>
-                </table>
-            </div>
+            <button class="hi-delete" onclick="deleteSession(event,'${s.session_id}')">Delete</button>
         </div>`;
     }).join('');
 }
 
-/* ── Tabs ────────────────────────────────────── */
-function switchTab(name) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    // Highlight correct tab button
-    const btns = document.querySelectorAll('.tab-btn');
-    const labels = ['text', 'tables', 'json'];
-    btns[labels.indexOf(name)]?.classList.add('active');
+async function deleteSession(e, sid) {
+    e.stopPropagation(); if(!confirm('Delete this chat?')) return;
+    try {
+        const r=await fetch(`${API_BASE}/documents/history/${sid}`,{method:'DELETE'});
+        if(!r.ok) throw new Error('Delete failed');
+        clearCachedSources(sid); if(sid===sessionId) newChat(); loadHistory();
+    } catch(err) { alert('Failed: '+err.message); }
 }
 
-/* ── Copy ────────────────────────────────────── */
-function copyContent() {
-    navigator.clipboard.writeText(document.getElementById('contentBox').textContent).catch(() => {});
-}
-function copyJson() {
-    navigator.clipboard.writeText(document.getElementById('jsonBox').textContent).catch(() => {});
+// ═══════════════════════════════════════════════════════════════════
+// LOAD PAST SESSION
+// ═══════════════════════════════════════════════════════════════════
+
+async function loadPastSession(sid, title, sessionType) {
+    if (sid===sessionId) return;
+    try {
+        const res=await fetch(`${API_BASE}/documents/history/${sid}`);
+        const data=await res.json(); if(!res.ok) return;
+        sessionId=sid; saveSessionState();
+        attachedFiles=[]; renderFilePreviewList(); clearMessages();
+
+        // Get all files for this session
+        let sessionFiles = [];
+        try {
+            const fr=await fetch(`${API_BASE}/documents/session/${sid}/files`);
+            if (fr.ok) {
+                const fd=await fr.json();
+                for (const item of (fd.files||[])) {
+                    const name=typeof item==='string'?item:(item.name||item.file_name);
+                    const did=typeof item==='string'?null:(item.doc_id||item.id||null);
+                    if (!name) continue;
+                    sessionFiles.push({name, doc_id: did});
+                    attachedFiles.push({name,file:null,uploaded:true,doc_id:did});
+                }
+                renderFilePreviewList();
+            }
+        } catch(e) {  }
+
+        sessionInfo.style.display='flex'; sessionIdDisp.textContent=sid.slice(0,8)+'...';
+        messageInput.disabled=false; sendBtn.disabled=false;
+        const isR=(sessionType||data.session_type||'')==='research';
+        if(isR&&!isDeepResearchMode) toggleDeepResearch();
+        if(!isR&&isDeepResearchMode) toggleDeepResearch();
+        messageInput.placeholder=isR?'Ask a follow-up research question...':'Ask a follow-up question...';
+        messageInput.focus();
+
+        const rendered=new Set();
+        const msgs = data.messages || [];
+        let fileIndex = 0;
+
+        // First pass: render all messages to DOM
+        // Store references to assistant message elements
+        const assistantElements = [];
+        const seenContent = new Set(); // Deduplicate identical messages
+        let hasSuccessfulDoc = false; // Track if we've seen a successful document brief
+        let hasDocUploadAttempt = false; // Track if user tried to upload a doc (even if failed)
+
+        for (let i = 0; i < msgs.length; i++) {
+            const msg = msgs[i];
+            const sender = msg.role==='human'?'user':'assistant';
+
+            // Skip duplicate assistant messages (same content)
+            if (sender === 'assistant') {
+                const contentKey = (msg.content || '').trim().slice(0, 200);
+                if (seenContent.has(contentKey)) {
+                    continue; // Skip this duplicate
+                }
+                seenContent.add(contentKey);
+            }
+
+            // Detect if this is a document summary/brief
+            const isSummary = msg.is_summary === true || 
+                (msg.content || '').includes('Document Brief') ||
+                (msg.content || '').includes('Voici un résumé') ||
+                (msg.content || '').includes('points principaux') ||
+                (msg.content || '').includes('conclusions clés');
+
+            // Track successful document briefs
+            if (isSummary) {
+                hasSuccessfulDoc = true;
+            }
+
+            // Track document upload attempts (user message with no text = likely doc upload)
+            if (sender === 'user' && (!msg.content || msg.content.trim().length === 0)) {
+                hasDocUploadAttempt = true;
+            }
+
+            // Check if this is a guardrail message
+            if (sender === 'assistant' && isGuardrailMessage(msg.content)) {
+                // Show guardrail if:
+                // 1. User asked off-topic without any doc upload (normal off-topic question)
+                // 2. User asked off-topic AFTER a successful doc upload
+                // Skip guardrail ONLY if:
+                // - It's a failed doc upload attempt (guardrail right after empty user msg, before any successful doc)
+                const isFailedUpload = hasDocUploadAttempt && !hasSuccessfulDoc && i > 0;
+                if (isFailedUpload) {
+                    continue; // Skip this failed upload guardrail
+                }
+
+                const lang = detectGuardrailLanguage(msg.content);
+                const d = document.createElement('div');
+                d.className = 'message assistant';
+                d.innerHTML = renderGuardrailCard(lang);
+                messages.appendChild(d);
+                messages.scrollTop = messages.scrollHeight;
+                assistantElements.push({ el: d, msg, index: i });
+                rendered.add(msg.content.slice(0,120));
+                continue;
+            }
+
+            // Get sources from message, metadata, or localStorage cache
+            let sources = msg.sources || msg.metadata?.sources || [];
+            if (!sources.length && sender === 'assistant') {
+                sources = lookupCachedSources(sid, msg.content);
+            }
+
+            const el = addMessage(msg.content, sender, isSummary, sources);
+
+            if (sender === 'assistant') {
+                assistantElements.push({ el, msg, index: i });
+                rendered.add(msg.content.slice(0,120));
+            }
+        }
+
+        // Second pass: insert document cards before their corresponding assistant messages
+        // A doc brief is the first assistant message after a user message with no text (or short text)
+        for (let i = 0; i < assistantElements.length; i++) {
+            const { el, msg } = assistantElements[i];
+
+            // Check if this is a document brief/summary
+            const isDocBrief = (msg.content || '').includes('Document Brief') ||
+                (msg.content || '').includes('Voici un résumé') ||
+                (msg.content || '').includes('Voici un bref résumé') ||
+                (msg.content || '').includes('points principaux') ||
+                (msg.is_summary === true) ||
+                (msg.metadata?.is_summary === true);
+
+            if (isDocBrief && fileIndex < sessionFiles.length) {
+                // Insert document card BEFORE this assistant message
+                addDocumentCard(sessionFiles[fileIndex].name, el);
+                fileIndex++;
+            }
+        }
+
+        // Handle any remaining files that weren't matched (edge case)
+        while (fileIndex < sessionFiles.length) {
+            addDocumentCard(sessionFiles[fileIndex].name);
+            fileIndex++;
+        }
+
+        // NO metadata.last_research_answer handling - it causes duplication
+        // The backend should include all messages in data.messages
+
+        const running=Object.values(backgroundTasks).find(t=>!t.done&&t.ownerSessionId===sid);
+        if(running) running.bubble=createResearchBubble('🔬 Research still running...');
+        highlightActiveSession(sid);
+    } catch(err) {  }
+}function highlightActiveSession(sid) {
+    document.querySelectorAll('.history-item').forEach(el=>el.classList.remove('active'));
+    if(sid) document.getElementById(`hi-${sid}`)?.classList.add('active');
 }
 
-/* ── Error ───────────────────────────────────── */
-function showError(msg) {
-    const el = document.getElementById('errorCard');
-    el.textContent = '❌ ' + msg;
-    el.classList.add('active');
-}
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
 
-/* ── Helpers ─────────────────────────────────── */
-function show(id) { document.getElementById(id).classList.add('active'); }
-function hide(id) { document.getElementById(id).classList.remove('active'); }
-function esc(str) {
-    return String(str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+messageInput.addEventListener('input', () => { messageInput.style.height='auto'; messageInput.style.height=Math.min(messageInput.scrollHeight,120)+'px'; });
+messageInput.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey&&!isProcessing){e.preventDefault();sendMessage();} });
+
+showEmptyState();
+loadHistory();
+const restoredSid = restoreSessionState();
+if (restoredSid) loadPastSession(restoredSid, 'Previous Chat', 'document');
 </script>
 </body>
 </html>

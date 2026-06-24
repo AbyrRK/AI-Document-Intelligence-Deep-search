@@ -30,9 +30,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # Config
 # ─────────────────────────────────────────────────────────────────────────────
 
-pytesseract.pytesseract.tesseract_cmd = (
-    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-)
+from app.core.config import settings
+if settings.TESSERACT_PATH and settings.TESSERACT_PATH != "tesseract":
+    pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_PATH
 
 TESSERACT_THRESHOLD = 60.0   # below this → try EasyOCR
 EASYOCR_THRESHOLD   = 40.0   # below this → Tesseract fallback
@@ -172,59 +172,209 @@ def ocr_with_easyocr(image: Image.Image) -> dict:
         "confidence": round(avg_confidence * 100, 1),
     }
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Engine: Gemini Vision (Level 3)
+# ─────────────────────────────────────────────────────────────────────────────
 
+def _run_gemini_vision(image: Image.Image) -> dict:
+    """
+    Level 3 — Gemini Vision API.
+    Called only when Tesseract < 60% AND EasyOCR < 40%.
+    Best for: Arabic handwriting, degraded scans, mixed scripts.
+    Requires GEMINI_API_KEY in .env.
+    """
+    import base64
+    import httpx
+    from app.core.config import settings
+
+    if not settings.GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY not set — cannot use Gemini Vision")
+
+    # Convert PIL image to base64 PNG
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    image_b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+    )
+
+    payload = {
+        "contents": [{
+            "parts": [
+                {
+                    "inline_data": {
+                        "mime_type": "image/png",
+                        "data": image_b64,
+                    }
+                },
+                {
+                    "text": (
+                        "Extract ALL text from this image exactly as written. "
+                        "Preserve line breaks. Output only the extracted text, "
+                        "no explanations. Support Arabic, French, and English."
+                    )
+                }
+            ]
+        }]
+    }
+
+    response = httpx.post(url, json=payload, timeout=30)
+    response.raise_for_status()
+
+    data = response.json()
+    text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+    return {
+        "text":        text,
+        "engine":      "gemini_vision",
+        "confidence":  95.0,
+        "handwritten": True,
+    }
 # ─────────────────────────────────────────────────────────────────────────────
 # Smart OCR — main decision engine
 # ─────────────────────────────────────────────────────────────────────────────
 
 def ocr_smart(image: Image.Image) -> dict:
-    processed = preprocess_image(image)
+    """
+    3-Level OCR Pipeline with Arabic/Language-aware routing.
+
+    Tesseract can report high confidence (>90%) with ZERO text.
+    We must check text length, not just confidence score.
+    """
+    processed   = preprocess_image(image)
     handwritten = is_likely_handwritten(processed)
 
-    # Always run Tesseract once and cache the result
-    tesseract_text, confidence = _run_tesseract(processed)
-    print(f"   📊 Tesseract confidence: {confidence:.1f}%")
+    # ── Level 1 — Tesseract (always run for baseline) ───────────────────────
+    tesseract_text, tesseract_conf = _run_tesseract(processed)
+    tesseract_len = len(tesseract_text.strip()) if tesseract_text else 0
 
-    if not handwritten and confidence >= TESSERACT_THRESHOLD:
-        print(f"   ✅ Using Tesseract ({confidence:.1f}%)")
+    print(f"   📊 Tesseract: confidence={tesseract_conf:.1f}%, text_length={tesseract_len} chars")
+
+    # CRITICAL: High confidence with empty text = FAIL, not success
+    # Tesseract reports 95% confidence when it sees a blank page!
+    tesseract_has_content = tesseract_len > 10  # At least 10 chars to count as text
+
+    # Detect if text contains Arabic characters
+    has_arabic = tesseract_has_content and any('\u0600' <= c <= '\u06FF' for c in tesseract_text)
+    arabic_ratio = sum(1 for c in tesseract_text if '\u0600' <= c <= '\u06FF') / max(tesseract_len, 1) if tesseract_has_content else 0
+
+    print(f"   🔤 Arabic detected: {has_arabic} (ratio: {arabic_ratio:.1%}), has_content: {tesseract_has_content}")
+
+    # ── Fast path: Non-Arabic, non-handwritten, high confidence, AND has content ──
+    if (not handwritten and not has_arabic and 
+        tesseract_conf >= TESSERACT_THRESHOLD and tesseract_has_content):
+        print(f"   ✅ Level 1 — Tesseract ({tesseract_conf:.1f}%, {tesseract_len} chars) [Non-Arabic printed]")
         return {
             "text":        tesseract_text,
             "engine":      "tesseract",
-            "confidence":  confidence,
+            "confidence":  tesseract_conf,
             "handwritten": False,
         }
 
-    if handwritten:
-        print("   ✍️  Handwriting detected — trying EasyOCR")
+    # ── Tesseract empty or Arabic/Handwritten → Force EasyOCR ────────────────
+    if not tesseract_has_content:
+        print(f"   ⚠️  Tesseract returned EMPTY text (confidence={tesseract_conf:.1f}%) — forcing EasyOCR")
+    elif has_arabic:
+        print(f"   🔤 Arabic text detected — forcing EasyOCR (Tesseract Arabic is unreliable)")
+    elif handwritten:
+        print("   ✍️  Handwriting detected — forcing EasyOCR")
     else:
-        print(f"   ⚠️  Low confidence ({confidence:.1f}%) — trying EasyOCR...")
+        print(f"   ⚠️  Low confidence ({tesseract_conf:.1f}%) — trying EasyOCR...")
 
-    # Level 2 — EasyOCR
+        # ── Level 2 — EasyOCR ────────────────────────────────────────────────────
+    easyocr_text = ""
+    easyocr_conf = 0.0
+
     try:
         easyocr_result = ocr_with_easyocr(image)
+        easyocr_text   = easyocr_result["text"]
         easyocr_conf   = easyocr_result["confidence"]
-        print(f"   📊 EasyOCR confidence: {easyocr_conf:.1f}%")
+        easyocr_len    = len(easyocr_text.strip()) if easyocr_text else 0
+        
+        print(f"   📊 EasyOCR: confidence={easyocr_conf:.1f}%, text_length={easyocr_len} chars")
+        print(f"   📝 EasyOCR text preview: {easyocr_text[:100]}...")
 
-        if easyocr_conf >= EASYOCR_THRESHOLD:
-            print(f"   ✅ Using EasyOCR ({easyocr_conf:.1f}%)")
+        # NEW: If EasyOCR got text but confidence is low, try Gemini for better quality
+        if easyocr_text.strip() and easyocr_len > 20 and easyocr_conf < 40:
+            print(f"   ⚠️  EasyOCR confidence low ({easyocr_conf:.1f}%) — trying Gemini Vision...")
+            try:
+                gemini_result = _run_gemini_vision(image)
+                gemini_text = gemini_result["text"]
+                gemini_len = len(gemini_text.strip()) if gemini_text else 0
+                
+                # Use Gemini if it got reasonable text
+                if gemini_len > easyocr_len * 0.5:  # At least 50% as much
+                    print(f"   ✅ Level 3 — Gemini Vision (text length: {gemini_len})")
+                    return {
+                        "text": gemini_text,
+                        "engine": "gemini_vision",
+                        "confidence": 95.0,
+                        "handwritten": handwritten,
+                    }
+            except Exception as e:
+                print(f"   ⚠️  Gemini failed ({e}) — using EasyOCR anyway")
+
+        # Use EasyOCR result
+        if easyocr_text.strip() and easyocr_len > 20:
+            print(f"   ✅ Level 2 — EasyOCR (text length: {easyocr_len} chars)")
             return {
-                "text":        easyocr_result["text"],
-                "engine":      "easyocr",
-                "confidence":  easyocr_conf,
+                "text": easyocr_text,
+                "engine": "easyocr",
+                "confidence": easyocr_conf,
                 "handwritten": handwritten,
             }
-        print(f"   ⚠️  EasyOCR too low — using cached Tesseract result")
+        
+        print(f"   ⚠️  EasyOCR returned empty/short text — trying Gemini Vision...")
 
     except Exception as e:
-        print(f"   ⚠️  EasyOCR failed ({e}) — using cached Tesseract result")
+        print(f"   ⚠️  EasyOCR failed ({e}) — trying Gemini Vision...")
 
-    # Fallback — reuse the ALREADY computed Tesseract result, no second call
-    return {
-        "text":        tesseract_text,
-        "engine":      "tesseract_fallback",
-        "confidence":  confidence,
-        "handwritten": handwritten,
-    }
+    # ── Level 3 — Gemini Vision ──────────────────────────────────────────────
+    try:
+        gemini_result = _run_gemini_vision(image)
+        gemini_text = gemini_result["text"]
+        gemini_len = len(gemini_text.strip()) if gemini_text else 0
+
+        print(f"   📊 Gemini: text_length={gemini_len} chars")
+        print(f"   📝 Gemini text preview: {gemini_text[:100]}...")
+
+        # Validate Gemini actually got text
+        if gemini_len < 10:
+            print(f"   ⚠️  Gemini returned empty/short text — falling back")
+            raise ValueError("Gemini failed to extract meaningful text")
+
+        print(f"   ✅ Level 3 — Gemini Vision (text length: {gemini_len})")
+        return {
+            "text":        gemini_text,
+            "engine":      "gemini_vision",
+            "confidence":  95.0,
+            "handwritten": handwritten,
+        }
+
+    except Exception as e:
+        print(f"   ⚠️  Gemini Vision unavailable ({e})")
+        print(f"   🔁 Falling back to best local result...")
+
+    # ── Fallback: Use whatever has text ─────────────────────────────────────
+    # Prefer EasyOCR if it got anything, else Tesseract (even if empty, return it)
+    if easyocr_text and len(easyocr_text.strip()) > 0:
+        print(f"   ✅ Using EasyOCR as fallback ({easyocr_conf:.1f}%)")
+        return {
+            "text":        easyocr_text,
+            "engine":      "easyocr_fallback",
+            "confidence":  easyocr_conf,
+            "handwritten": handwritten,
+        }
+    else:
+        print(f"   ✅ Using Tesseract as fallback (empty result)")
+        return {
+            "text":        tesseract_text or "",  # Ensure string, not None
+            "engine":      "tesseract_fallback",
+            "confidence":  tesseract_conf,
+            "handwritten": handwritten,
+        }
 # ─────────────────────────────────────────────────────────────────────────────
 # Public API — called by document_service.py
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,39 @@
+# ── Secrets — NEVER bake into the image ─────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Runtime data — mounted as volumes instead ────────────────
+data/
+uploads/
+logs/
+
+# ── Python cache ─────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# ── Virtual environment ───────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Dev tools ─────────────────────────────────────────────────
+tests/
+*.log
+uvicorn_log.txt
+frontend/server.py
+
+# ── Git ───────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── IDE ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp

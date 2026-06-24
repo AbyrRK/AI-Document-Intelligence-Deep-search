@@ -1,0 +1,154 @@
+[
+  {
+    "id": "doc_summary",
+    "description": "General document understanding",
+    "question": "What is this document about?",
+    "expect_citation": false,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "doc_title",
+    "description": "Extract document title",
+    "question": "What is the title of this document?",
+    "expect_citation": false,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "detailed_explanation",
+    "description": "Ask for details with evidence",
+    "question": "Can you give me more details and show me where you found this?",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "budget_extraction",
+    "description": "Extract budget or financial amount",
+    "question": "What is the exact budget mentioned in the document?",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "total_amount_due",
+    "description": "Extract total payment amount",
+    "question": "What is the total amount due?",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "deadline_extraction",
+    "description": "Extract deadline or due date",
+    "question": "What is the due date or deadline mentioned?",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "company_names",
+    "description": "Extract organizations or companies",
+    "question": "What company names are mentioned in the document?",
+    "expect_citation": false,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "important_dates",
+    "description": "Extract important dates",
+    "question": "What important dates are mentioned in this document?",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "key_points",
+    "description": "Summarize key information",
+    "question": "What are the key points mentioned in this document?",
+    "expect_citation": false,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "required_actions",
+    "description": "Identify requested actions",
+    "question": "Are there any actions or tasks required in this document?",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "payment_terms",
+    "description": "Extract payment conditions",
+    "question": "What payment terms are specified?",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "contract_duration",
+    "description": "Extract duration information",
+    "question": "What is the contract duration mentioned in the document?",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": null
+  },
+  {
+    "id": "french_summary",
+    "description": "French multilingual test",
+    "question": "Quel est le sujet principal de ce document ?",
+    "expect_citation": false,
+    "expect_refusal": false,
+    "expect_lang": "fr"
+  },
+  {
+    "id": "french_deadline",
+    "description": "French deadline extraction",
+    "question": "Quelle est la date limite mentionnée dans le document ?",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": "fr"
+  },
+  {
+    "id": "arabic_summary",
+    "description": "Arabic multilingual test",
+    "question": "ما هو موضوع هذا المستند؟",
+    "expect_citation": false,
+    "expect_refusal": false,
+    "expect_lang": "ar"
+  },
+  {
+    "id": "arabic_amount",
+    "description": "Arabic amount extraction",
+    "question": "ما هو المبلغ الإجمالي المستحق المذكور في المستند؟",
+    "expect_citation": true,
+    "expect_refusal": false,
+    "expect_lang": "ar"
+  },
+  {
+    "id": "out_of_scope_ceo",
+    "description": "Out-of-scope refusal test",
+    "question": "What is the CEO's favorite color?",
+    "expect_citation": false,
+    "expect_refusal": true,
+    "expect_lang": null
+  },
+  {
+    "id": "out_of_scope_prediction",
+    "description": "Unsupported prediction request",
+    "question": "Can you predict the company's revenue next year?",
+    "expect_citation": false,
+    "expect_refusal": true,
+    "expect_lang": null
+  },
+  {
+    "id": "ambiguous_question",
+    "description": "Ambiguous comparison question",
+    "question": "Is this company better than its competitors?",
+    "expect_citation": false,
+    "expect_refusal": true,
+    "expect_lang": null
+  }
+]

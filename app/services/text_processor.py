@@ -96,7 +96,6 @@ def process_text(raw_text: str) -> dict:
         # result["clean_text"]  → cleaned text
         # result["language"]    → 'fr' | 'en' | 'ar' | 'unknown'
     """
-   # Fix 2: process_text — add char_count and word_count for your metadata
     language = detect_language(raw_text)
     clean    = clean_text(raw_text, language=language)
     return {
@@ -104,6 +103,6 @@ def process_text(raw_text: str) -> dict:
         "language":        language,
         "original_length": len(raw_text),
         "clean_length":    len(clean),
-        "word_count":      len(clean.split()),
+        "word_count":      len(clean.split()),           
         "reduction_pct":   round(max(0.0, (1 - len(clean) / max(len(raw_text), 1)) * 100), 1),
     }
