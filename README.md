@@ -20,7 +20,6 @@ Handles any business document format: PDF (native or scanned), Word, Excel, and 
 
 - Detects whether a PDF is native text or a scanned image and routes accordingly
 - 3-level OCR fallback: Tesseract → EasyOCR → Gemini Vision, so even handwritten Arabic documents are handled
-- Parallel OCR processing reduced a 57-page scanned PDF from **6 minutes to 2.5 minutes**
 - Smart page selection (brief / summary / full) so users get a response in under 5 seconds regardless of document size
 - Language detection works across Arabic, French, and English without configuration
 - All text is chunked, embedded, and stored in Qdrant with full metadata (session, document ID, language, page number)
@@ -185,4 +184,4 @@ python -m pytest tests/ -v
 | 4.5 | Prompt engineering evaluation | ✅ |
 | 5 | Multi-agent deep research | ✅ |
 | 6 | Domain guardrail | ✅ |
-| 7 | Docker + microservice packaging | ✅ |
+| 7 | Docker + microservice packaging |  |
