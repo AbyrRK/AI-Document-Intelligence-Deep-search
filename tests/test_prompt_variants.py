@@ -59,7 +59,7 @@ from eval_scorer import score_answer
 # ① CONFIGURATION
 # ══════════════════════════════════════════════════════════════════════════════
 
-SESSION_ID = os.environ.get("EVAL_SESSION_ID", " dbdb7501-cc3f-4929-b003-86f78e3f03c3")
+SESSION_ID = os.environ.get("EVAL_SESSION_ID", "")
 K = 5
 
 # API pacing (critical for free tiers)

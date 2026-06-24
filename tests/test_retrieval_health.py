@@ -19,7 +19,7 @@ from app.services.vector_store import vector_store
 
 # ── CONFIG ──────────────────────────────────────────────────────────────────
 
-SESSION_ID = "9db5641d-540d-4c3d-85e2-5e964d6bda3e"  # ← set your session_id
+SESSION_ID = os.environ.get("EVAL_SESSION_ID", "")
 MIN_CHUNKS_REQUIRED = 1
 TEST_QUERIES = [
     "What vector database is used?",
