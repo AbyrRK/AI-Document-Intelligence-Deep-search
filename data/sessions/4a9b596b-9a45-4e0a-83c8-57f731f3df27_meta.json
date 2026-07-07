@@ -1,0 +1,38 @@
+{
+  "session_id": "4a9b596b-9a45-4e0a-83c8-57f731f3df27",
+  "files": [
+    "FACTURE ALI REKIK.docx"
+  ],
+  "updated_at": "2026-07-06T16:43:09.075780",
+  "file_name": "FACTURE ALI REKIK.docx",
+  "title": "c'est quoi le TTC",
+  "session_type": "document",
+  "research_question": "c'est quoi le TTC ?",
+  "last_research_sources": [
+    {
+      "id": 1,
+      "type": "document",
+      "title": "FACTURE ALI REKIK.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "| N° | DESIGNATION | UNIT | QUIT | PU | PT HT |\n| --- | --- | --- | --- | --- | --- |\n| 301 | Fouille en terrain | M³ | 12798.751 | 0.150 | 1.919.812 |\n| 311 | Remblais compactés | M³ | 1990.500 | 0.120 | 238.860 |\n|  | TOTAL HT | 2.158.672 |  |  |  |\n|  | Total TVA | 410.147 |  |  |  |\n|  | TOTAL TTC | 2.568.819 |  |  |  |"
+    },
+    {
+      "id": 3,
+      "type": "document",
+      "title": "FACTURE ALI REKIK.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "Société T.P et services\n\nARIANA CENTRE BLOC C BUREAU 408\n\nT.V.A 1823212 V /A /M 000\n\nTEL 98 940912 FAX 73 252034\n\nTunis le, 1/02/2025\n\nComplément Facture du 28/11/2024\n\nENTREPRISE GLOULOU MOHAMED ET SALEM\n\nPROJET BASSIN DE RETARDEMENT D'EL MABTOUH\n\nArrêter la présente facture la somme de deux mille cinq cent soixante- huit dinar 819 millimes\n\nGérant RAMI REKIK"
+    }
+  ],
+  "last_research_answer": "✅ Le TTC, ou Total Toutes Taxes Comprises, représente le montant final d'une facture incluant toutes les taxes applicables, notamment la TVA.\n\n## Définition et Calcul du TTC\nLe sigle TTC signifie \"Toutes Taxes Comprises\" et désigne le montant total à payer après l'ajout des taxes. Sur la facture analysée, le TOTAL TTC est calculé en additionnant le TOTAL HT (Hors Taxes) et le Total TVA (Taxe sur la Valeur Ajoutée) [1]. Spécifiquement, le TOTAL HT est de 2.158.672 et le Total TVA est de 410.147, résultant en un TOTAL TTC de 2.568.819 [1].\n\n## Montant du TTC sur la Facture\nLe montant total toutes taxes comprises pour la facture du 1er février 2025 est de 2.568.819 [1]. Ce montant est également confirmé textuellement comme \"deux mille cinq cent soixante-huit dinar 819 millimes\" [3].\n\n## Conclusion\nLe TTC représente le coût final d'un service ou d'un produit, intégrant l'ensemble des taxes, principalement la TVA. Pour cette facture, le montant total à régler, toutes taxes comprises, s'élève à 2.568.819 [1][3]."
+}

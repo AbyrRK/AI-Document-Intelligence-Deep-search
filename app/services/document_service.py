@@ -5,6 +5,15 @@ Document ingestion pipeline — Phase 2 & 4
 
 Supports : PDF, DOCX, XLSX, HTML, Images
 Modes    : brief | summary | full | table
+
+CHANGE (table-aware chunking):
+  - DOCX and XLSX tables are now ALWAYS converted to Markdown (not just in
+    "table" mode). Markdown preserves row/column relationships that plain
+    tab/pipe-joined text destroys.
+  - Chunking is split into two passes: body text goes through the normal
+    RecursiveCharacterTextSplitter; table Markdown goes through the
+    table-aware path in chunking_service.create_chunks() (content_type="table"),
+    which avoids splitting a table mid-row. Results are merged before indexing.
 """
 
 import time
@@ -46,6 +55,10 @@ SUMMARY_LAST     = 3
 BIG_TITLE_RATIO  = 1.5
 BIG_TITLE_MIN_PT = 14
 
+# Sheets/tables above this many rows are split by the table-aware chunker
+# instead of kept as a single chunk (see chunking_service.create_chunks).
+TABLE_CHUNK_ROW_GUARD = 200
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Validation
@@ -73,6 +86,40 @@ def validate_file(file_path: str) -> Path:
         )
 
     return path
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Markdown table helper (shared by DOCX + XLSX extractors)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _rows_to_markdown(rows: list[list[str]]) -> str:
+    """
+    Converts a list of row lists into a GitHub-flavored Markdown table.
+    First row is treated as the header. Empty input returns "".
+    Cell values are stringified and pipe characters are escaped so they
+    don't break the table syntax.
+    """
+    if not rows:
+        return ""
+
+    def _clean(cell) -> str:
+        s = "" if cell is None else str(cell)
+        return s.replace("|", "\\|").replace("\n", " ").strip()
+
+    header = rows[0]
+    body   = rows[1:]
+    col_count = len(header)
+
+    lines = []
+    lines.append("| " + " | ".join(_clean(c) for c in header) + " |")
+    lines.append("| " + " | ".join(["---"] * col_count) + " |")
+    for row in body:
+        # pad/truncate row to header length so the table stays valid
+        padded = list(row) + [""] * (col_count - len(row))
+        padded = padded[:col_count]
+        lines.append("| " + " | ".join(_clean(c) for c in padded) + " |")
+
+    return "\n".join(lines)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -219,6 +266,7 @@ def _extract_pdf(path: Path, mode: str) -> dict:
 
         return {
             "text":              "\n\n".join(parts),
+            "body_text":         result["text"],          # ← NEW: text without table dump
             "pages_total":       total,
             "pages_read":        len(page_indices),
             "pages_selected":    [i + 1 for i in page_indices],
@@ -244,6 +292,7 @@ def _extract_pdf(path: Path, mode: str) -> dict:
 
     return {
         "text":              text,
+        "body_text":         text,        # ← NEW: no tables extracted in non-table PDF modes
         "pages_total":       total,
         "pages_read":        len(page_indices),
         "pages_selected":    [i + 1 for i in page_indices],
@@ -265,12 +314,14 @@ def _extract_docx(path: Path, mode: str) -> dict:
     else:
         selected = paras
 
-    text = "\n\n".join(p.text for p in selected)
+    body_text = "\n\n".join(p.text for p in selected)
 
-    # ── ALWAYS extract tables regardless of mode ──────────────────────────────
-    table_text = ""
-    for table in doc.tables:
-        rows = []
+    # ── ALWAYS extract tables as proper Markdown (any mode) ───────────────────
+    # Markdown preserves row/column structure, which the previous
+    # " | "-joined flattening destroyed for retrieval/chunking purposes.
+    tables: list[dict] = []
+    for t_idx, table in enumerate(doc.tables):
+        raw_rows = []
         for row in table.rows:
             row_data = [cell.text.strip() for cell in row.cells]
             # deduplicate merged cells (DOCX repeats merged cell content)
@@ -278,52 +329,46 @@ def _extract_docx(path: Path, mode: str) -> dict:
             for cell in row_data:
                 if not seen_cells or cell != seen_cells[-1]:
                     seen_cells.append(cell)
-            row_str = " | ".join(c for c in seen_cells if c)
-            if row_str.strip():
-                rows.append(row_str)
-        if rows:
-            table_text += "\n" + "\n".join(rows)
+            if any(c for c in seen_cells):
+                raw_rows.append(seen_cells)
 
-    if table_text.strip():
-        text = text + "\n\n" + table_text.strip()
-        print(f"[DOCX] Table text appended: {len(table_text)} chars")  
+        if not raw_rows:
+            continue
+
+        markdown = _rows_to_markdown(raw_rows)
+        tables.append({
+            "page":        1,
+            "table_index": t_idx + 1,
+            "source":      "python-docx",
+            "markdown":    markdown,
+            "row_count":   len(raw_rows) - 1,
+            "col_count":   len(raw_rows[0]) if raw_rows else 0,
+        })
+
+    if tables:
+        print(f"[DOCX] {len(tables)} table(s) converted to Markdown in {path.name}")
     else:
-        print(f"[DOCX] No table text found in {path.name}")  
+        print(f"[DOCX] No tables found in {path.name}")
+
+    # Human-readable combined text (for display/full_text/word_count) —
+    # includes table Markdown appended, same as before, just better-formatted.
+    text = body_text
+    if tables:
+        text += "\n\n--- EXTRACTED TABLES ---\n"
+        for t in tables:
+            text += f"\n[Table {t['table_index']}]\n{t['markdown']}\n"
     # ─────────────────────────────────────────────────────────────────────────
-
-    tables       = []
-    tables_found = 0
-    if mode == "table":
-        from app.services.table_service import _table_to_markdown, _table_to_json
-        for t_idx, table in enumerate(doc.tables):
-            raw = [[cell.text for cell in row.cells] for row in table.rows]
-            if not raw:
-                continue
-            tables.append({
-                "page":        1,
-                "table_index": t_idx + 1,
-                "source":      "python-docx",
-                "json":        _table_to_json(raw),
-                "markdown":    _table_to_markdown(raw),
-                "row_count":   len(raw) - 1,
-                "col_count":   len(raw[0]) if raw else 0,
-            })
-        tables_found = len(tables)
-
-        if tables:
-            text += "\n\n--- EXTRACTED TABLES ---\n"
-            for t in tables:
-                text += f"\n[Table {t['table_index']}]\n{t['markdown']}\n"
 
     return {
         "text":              text,
+        "body_text":         body_text,   # prose only, used for normal chunking
         "pages_total":       len(paras),
         "pages_read":        len(selected),
         "pages_selected":    [],
         "extraction_method": "direct",
         "is_scanned":        False,
         "tables":            tables,
-        "tables_found":      tables_found,
+        "tables_found":      len(tables),
     }
 
 def _extract_xlsx(path: Path, mode: str) -> dict:
@@ -331,31 +376,55 @@ def _extract_xlsx(path: Path, mode: str) -> dict:
     all_sheet_names  = wb.sheetnames
     sheets           = all_sheet_names if mode == "full" else all_sheet_names[:1]
     row_limit        = {"brief": 20, "summary": 50}.get(mode)
-    parts            = []
 
-    for name in sheets:
+    tables: list[dict] = []
+    body_parts: list[str] = []
+
+    for s_idx, name in enumerate(sheets):
         ws        = wb[name]
-        rows_text = []
+        raw_rows  = []
         for i, row in enumerate(ws.iter_rows(values_only=True)):
             if row_limit is not None and i >= row_limit:
                 break
-            row_str = "\t".join("" if c is None else str(c) for c in row)
-            if row_str.strip():
-                rows_text.append(row_str)
-        parts.append(f"[Sheet: {name}]\n" + "\n".join(rows_text))
+            # skip fully-empty rows
+            if all(c is None or str(c).strip() == "" for c in row):
+                continue
+            raw_rows.append(list(row))
+
+        if not raw_rows:
+            continue
+
+        markdown = _rows_to_markdown(raw_rows)
+        tables.append({
+            "page":        s_idx + 1,
+            "table_index": s_idx + 1,
+            "source":      "openpyxl",
+            "sheet_name":  name,
+            "markdown":    markdown,
+            "row_count":   len(raw_rows) - 1,
+            "col_count":   len(raw_rows[0]) if raw_rows else 0,
+        })
+        body_parts.append(f"[Sheet: {name}]")  # lightweight marker, full data lives in `tables`
 
     wb.close()
-    text = "\n\n".join(parts)
+
+    body_text = "\n\n".join(body_parts)
+    text = body_text
+    if tables:
+        text += "\n\n--- EXTRACTED TABLES ---\n"
+        for t in tables:
+            text += f"\n[Sheet: {t['sheet_name']}]\n{t['markdown']}\n"
 
     return {
         "text":              text,
+        "body_text":         body_text,   
         "pages_total":       len(all_sheet_names),
         "pages_read":        len(sheets),
         "pages_selected":    [],
         "extraction_method": "direct",
         "is_scanned":        False,
-        "tables":            [],
-        "tables_found":      0,
+        "tables":            tables,
+        "tables_found":      len(tables),
     }
 
 
@@ -371,8 +440,10 @@ def _extract_html(path: Path, mode: str) -> dict:
     elif mode == "summary":
         lines = lines[:150]
 
+    text = "\n".join(lines)
     return {
-        "text":              "\n".join(lines),
+        "text":              text,
+        "body_text":         text,        
         "pages_total":       1,
         "pages_read":        1,
         "pages_selected":    [1],
@@ -398,6 +469,7 @@ def _extract_image(path: Path, mode: str) -> dict:
 
         return {
             "text":              "\n\n".join(parts),
+            "body_text":         result.get("text", ""),   
             "pages_total":       1,
             "pages_read":        1,
             "pages_selected":    [1],
@@ -416,8 +488,10 @@ def _extract_image(path: Path, mode: str) -> dict:
           f"confidence={result['metadata'].get('ocr_confidence', 0):.1f}%, "
           f"text_length={len(result.get('text', ''))} chars")
 
+    text = result.get("text", "")
     return {
-        "text":              result.get("text", ""),
+        "text":              text,
+        "body_text":         text,         
         "pages_total":       1,
         "pages_read":        1,
         "pages_selected":    [1],
@@ -428,6 +502,44 @@ def _extract_image(path: Path, mode: str) -> dict:
         "tables":            [],
         "tables_found":      0,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Table-aware chunk builder
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _build_chunks_for_indexing(body_text: str, tables: list, base_metadata: dict) -> list:
+    """
+    Chunks body prose and table Markdown SEPARATELY so tables are never
+    split mid-row by the generic recursive text splitter.
+
+    - body_text  -> normal chunking (content_type defaults to "text")
+    - each table -> chunked via the table-aware path in chunking_service
+                    (content_type="table"), which prefers row boundaries
+                    and keeps small tables as a single chunk.
+    """
+    chunks: list[dict] = []
+
+    if body_text and body_text.strip():
+        chunks.extend(create_chunks(
+            text=body_text,
+            metadata={**base_metadata, "content_type": "text"},
+        ))
+
+    for t in tables or []:
+        markdown = t.get("markdown", "")
+        if not markdown.strip():
+            continue
+        table_metadata = {
+            **base_metadata,
+            "content_type": "table",
+            "page_number":  t.get("page", base_metadata.get("page_number", 1)),
+            "table_index":  t.get("table_index"),
+            "sheet_name":   t.get("sheet_name"),
+        }
+        chunks.extend(create_chunks(text=markdown, metadata=table_metadata))
+
+    return chunks
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -540,7 +652,7 @@ def process_document(
     index:      bool = False,
     session_id: str  = "",
     file_name:  str  = "",
-    doc_id:     str  = "",          # ← NEW: pass in or leave blank to skip indexing with doc_id
+    doc_id:     str  = "",          #  pass in or leave blank to skip indexing with doc_id
 ) -> dict:
     if mode not in ("brief", "summary", "full", "table"):
         raise ValueError(f"Invalid mode '{mode}'. Choose: brief | summary | full | table")
@@ -562,12 +674,18 @@ def process_document(
     else:
         raise ValueError(f"Unsupported format: {suffix}")
 
-    text = result["text"]
+    text      = result["text"]
+    body_text = result.get("body_text", text)
 
     if mode != "table":
         processed = process_text(text)
         text      = processed["clean_text"]
         language  = processed["language"]
+
+        # body_text also needs the same cleaning pass before chunking,
+        # otherwise table chunks are "clean" but prose chunks aren't.
+        processed_body = process_text(body_text)
+        body_text       = processed_body["clean_text"]
     else:
         language = "unknown"
 
@@ -584,22 +702,26 @@ def process_document(
 
     chunks_created = 0
     if index:
-        chunks = create_chunks(
-            text=text,
-            metadata={
-                "file_name":         display_name,
-                "doc_id":            doc_id,           # ← NEW
-                "file_type":         suffix.lstrip("."),
-                "language":          language,
-                "extraction_method": result["extraction_method"],
-                "session_id":        session_id,
-                "mode":              mode,
-                "created_at":        datetime.utcnow().isoformat(),
-            }
+        base_metadata = {
+            "file_name":         display_name,
+            "doc_id":            doc_id,           
+            "file_type":         suffix.lstrip("."),
+            "language":          language,
+            "extraction_method": result["extraction_method"],
+            "session_id":        session_id,
+            "mode":              mode,
+            "created_at":        datetime.utcnow().isoformat(),
+        }
+        chunks = _build_chunks_for_indexing(
+            body_text=body_text,
+            tables=result.get("tables", []),
+            base_metadata=base_metadata,
         )
         vector_store.ensure_collection()
         chunks_created = vector_store.add_documents(chunks, session_id=session_id)
-        print(f"📦 {chunks_created} chunks indexed in Qdrant (mode={mode}, doc_id={doc_id[:8]}...)")
+        table_chunks = sum(1 for c in chunks if c["metadata"].get("content_type") == "table")
+        print(f"📦 {chunks_created} chunks indexed in Qdrant "
+              f"({table_chunks} table chunks) (mode={mode}, doc_id={doc_id[:8]}...)")
 
     word_count      = _word_count(text)
     display_content = text if mode == "table" else text[:5000]
@@ -608,7 +730,7 @@ def process_document(
     return {
         "status":    "success",
         "file_name": display_name,
-        "doc_id":    doc_id,          # ← NEW: returned so caller can store/forward it
+        "doc_id":    doc_id,          #  returned so caller can store/forward it
         "file_type": suffix.lstrip("."),
         "file_size_kb": round(path.stat().st_size / 1024, 2),
         "mode": mode,
@@ -624,6 +746,7 @@ def process_document(
             "language":          language,
             "content":           display_content,
             "full_text":         text,
+            "body_text":         body_text,       # exposed for callers that need it
             "tables":            result.get("tables", []),
             "tables_found":      result.get("tables_found", 0),
             "indexed":           chunks_created > 0,
@@ -680,7 +803,7 @@ def process_and_respond(
     index:      bool = True,
     lazy:       bool = True,
     file_name:  str = "",
-    doc_id:     str = "",          # ← NEW: generated once by the route, passed all the way down
+    doc_id:     str = "",          
 ) -> dict:
     """
     Extract document and either answer immediately or return a brief.
@@ -696,14 +819,17 @@ def process_and_respond(
         index=False,
         session_id=session_id,
         file_name=file_name,
-        doc_id=doc_id,             # ← NEW
+        doc_id=doc_id,             
     )
 
-    text         = result.get("extraction", {}).get("full_text", "")
+    extraction   = result.get("extraction", {})
+    text         = extraction.get("full_text", "")
+    body_text    = extraction.get("body_text", text)   
+    tables       = extraction.get("tables", [])         
     scanned_note = None
-    if result.get("extraction", {}).get("is_scanned"):
+    if extraction.get("is_scanned"):
         scanned_note = (
-            f"Scanned document ({result['extraction']['pages_total']} pages) — "
+            f"Scanned document ({extraction['pages_total']} pages) — "
             "OCR running in background"
         )
 
@@ -711,19 +837,22 @@ def process_and_respond(
     display_name = file_name or result["file_name"]
     add_session_file(session_id, display_name)
 
-    # 3. Build chunks — doc_id stamped on every chunk here
-    chunks = create_chunks(
-        text=text,
-        metadata={
-            "file_name":         display_name,
-            "doc_id":            doc_id,        # ← NEW
-            "file_type":         result["file_type"],
-            "language":          result["extraction"]["language"],
-            "extraction_method": result["extraction"]["extraction_method"],
-            "session_id":        session_id,
-            "mode":              mode,
-            "created_at":        datetime.utcnow().isoformat(),
-        }
+    # 3. Build chunks — doc_id stamped on every chunk here, tables chunked
+    #    separately from body text so rows never get split mid-record.
+    base_metadata = {
+        "file_name":         display_name,
+        "doc_id":            doc_id,        
+        "file_type":         result["file_type"],
+        "language":          extraction.get("language", "unknown"),
+        "extraction_method": extraction.get("extraction_method", "unknown"),
+        "session_id":        session_id,
+        "mode":              mode,
+        "created_at":        datetime.utcnow().isoformat(),
+    }
+    chunks = _build_chunks_for_indexing(
+        body_text=body_text,
+        tables=tables,
+        base_metadata=base_metadata,
     )
 
     # 4. Check if session already has indexed content
@@ -740,12 +869,24 @@ def process_and_respond(
     if should_lazy:
         if session_id in _deferred_chunks:
             _deferred_chunks[session_id].extend(chunks)
-            print(f"⏳ Lazy mode: appended {len(chunks)} chunks (total: {len(_deferred_chunks[session_id])}) for session {session_id[:8]}")
         else:
             _deferred_chunks[session_id] = chunks
-            print(f"⏳ Lazy mode: stored {len(chunks)} chunks for session {session_id[:8]}")
 
-        all_chunks = _deferred_chunks[session_id]
+        print(f"⏳ Lazy mode: stored {len(chunks)} chunks for session {session_id[:8]}")
+
+        # ── Trigger background indexing immediately ──────────────────
+        import threading
+        def _background_index(sid):
+            try:
+                ensure_indexed(sid)
+            except Exception as e:
+                print(f"❌ Background indexing failed — session: {sid} — {e}")
+
+        t = threading.Thread(target=_background_index, args=(session_id,), daemon=True)
+        t.start()
+        # ─────────────────────────────────────────────────────────────
+
+        all_chunks = _deferred_chunks.get(session_id, chunks)
         fallback = "\n\n".join(c["content"] for c in all_chunks[:8])
         brief = rag_service.generate_brief(session_id, fallback_text=fallback)
 
@@ -757,7 +898,7 @@ def process_and_respond(
             "indexed":      False,
             "scanned_note": scanned_note,
             "file_name":    display_name,
-            "doc_id":       doc_id,             # ← NEW
+            "doc_id":       doc_id,
         }
 
     # 6. Eager path: index now
@@ -779,7 +920,7 @@ def process_and_respond(
         return {
             "status":         "answered",
             "session_id":     session_id,
-            "doc_id":         doc_id,           # ← NEW
+            "doc_id":         doc_id,           
             "chunks_indexed": chunks_created,
             "answer":         rag_result["answer"],
             "sources":        rag_result["sources"],
@@ -797,7 +938,7 @@ def process_and_respond(
     return {
         "status":         "summarized",
         "session_id":     session_id,
-        "doc_id":         doc_id,               # ← NEW
+        "doc_id":         doc_id,               
         "chunks_indexed": chunks_created,
         "summary":        brief,
         "scanned_note":   scanned_note,

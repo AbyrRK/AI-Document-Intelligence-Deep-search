@@ -26,7 +26,6 @@ from app.research.agents.reranker           import reranker_node
 from app.research.agents.synthesis          import synthesis_node
 from app.research.agents.citation_formatter import citation_formatter_node
 
-
 # ── Routing functions ─────────────────────────────────────────────────────────
 
 def route_guardrail(state: ResearchState) -> str:
@@ -120,6 +119,7 @@ research_graph = builder.compile()
 
 # ── Public entry point ────────────────────────────────────────────────────────
 
+
 def run_research_graph(
     question: str,
     session_id: str,
@@ -128,42 +128,22 @@ def run_research_graph(
     doc_id: str = "",
     doc_ids: list = None,
 ) -> dict:
-    """
-    Invoke the full research graph and return the final state dict.
-
-    Fields written by agents:
-      guardrail_node      → guardrail_decision, guardrail_reason, (validated_answer on refuse)
-      reformulator_node   → reformulated_query
-      router_node         → retrieval_mode, (validated_answer on none)
-      rag_node            → rag_results, rag_confidence
-      web_node            → web_results, web_confidence
-      reranker_node       → ranked_context
-      synthesis_node      → final_answer, cited_sources
-      citation_formatter  → validated_answer, sources
-    """
     initial_state = {
-        # ── Client inputs ────────────────────────────────────────────────────
         "question":              question,
         "session_id":            session_id,
         "language":              language,
         "doc_id":                doc_id,
         "doc_ids":               doc_ids or [],
         "session_has_documents": session_has_documents,
-
-        # ── Router flags ─────────────────────────────────────────────────────
         "recommendation_mode":   False,
         "retrieval_mode":        None,
         "reformulated_query":    None,
         "guardrail_decision":    None,
         "guardrail_reason":      None,
-
-        # ── Retrieval results ────────────────────────────────────────────────
         "rag_results":           [],
         "web_results":           [],
         "rag_confidence":        0.0,
         "web_confidence":        0.0,
-
-        # ── Downstream ───────────────────────────────────────────────────────
         "ranked_context":        [],
         "cited_sources":         [],
         "raw_citations":         [],
@@ -173,4 +153,8 @@ def run_research_graph(
         "sources":               [],
     }
 
-    return research_graph.invoke(initial_state)
+    
+    result = research_graph.invoke(initial_state)
+
+
+    return result

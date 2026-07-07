@@ -1,0 +1,35 @@
+{
+  "91384dd1-a3a6-463d-8091-652dd8eefd78": [
+    {
+      "role": "ai",
+      "content": "Here's a brief summary of the document's main points and key findings:\n\n*   **Project Overview:** PFE2026 is an AI-Powered Multilingual Document Intelligence Platform, implemented as a Retrieval-Augmented Generation (RAG) system.\n*   **Core Functionality:** It enables users to upload various document types (PDF, DOCX, XLSX, Images, HTML) and interact with them through a multilingual conversational AI interface, supporting semantic search and conversation memory.\n*   **Key Architecture:** The system utilizes a FastAPI backend, Qdrant for its vector database, and Google Gemini for embeddings and chat capabilities.\n*   **Developed Features:** A comprehensive document processing pipeline has been built, including extraction (native text, OCR, tables) from multiple formats, language detection, smart chunking, and vector indexing."
+    }
+  ],
+  "9a1be723-b30e-45e2-8c00-3e1dc2a20ae8": [
+    {
+      "role": "ai",
+      "content": "Here's a summary of the document's main points:\n\n*   This is a \"School Orientation Card\" (بطاقة التوجيه المدرسي) for a first-year secondary student in Tunisia, used to determine their academic track.\n*   The card pertains to student Yasmine Chaabane (born 29/05/2010) for the 2025-2026 academic year, submitted by her guardian, Manel Eidoudi.\n*   The guardian has indicated a ranked preference for four academic tracks: 1) Economy and Services, 2) Literature, 3) Information Technology, and 4) Sciences.\n*   The document was submitted on April 6, 2026, from Nabeul."
+    },
+    {
+      "role": "human",
+      "content": "in arabic"
+    },
+    {
+      "role": "ai",
+      "content": "إليك ملخص للوثيقة باللغة العربية:\n\n*   هذه \"بطاقة توجيه مدرسي\" لتلميذة في السنة الأولى ثانوي بتونس، تُستخدم لتحديد مسارها الدراسي.\n*   تخص البطاقة التلميذة ياسمين شعبان (تاريخ الولادة 29/05/2010) للسنة الدراسية 2025-2026، وقد قدمتها وليتها منال عيدودي.\n*   أشارت الولية إلى تفضيل مرتب لأربعة مسارات دراسية: 1) الاقتصاد والخدمات، 2) الآداب، 3) تكنولوجيا الإعلامية، و 4) العلوم.\n*   تم تقديم الوثيقة بتاريخ 6 أفريل 2026، من نابل."
+    }
+  ],
+  "f2e6286a-b995-4d48-82d5-495ed1adc735": [
+    {
+      "role": "ai",
+      "content": "Here's a summary of the document's main points:\n\n*   The document is a tender dossier for a project to complete a preparatory school and a boarding school in Smenja, Zaghouan, Tunisia.\n*   It specifically covers the \"VRD\" (Voirie et Réseaux Divers - Roads and Various Networks) lot.\n*   Key contents include the Bill of Quantities/Detailed Estimate and Particular Technical Clauses.\n*   The project is managed under the Ministry of Education, Regional Council of Zaghouan, and Regional Directorate of Equipment and Housing, with Samed Engineering involved."
+    }
+  ],
+  "98779bef-1dab-4ed0-a1da-d683ef51c46e": [
+    {
+      "role": "ai",
+      "content": "Based on the provided excerpts, the document appears to be a collection of fragmented notes or ideas, touching upon:\n\n*   **Linguistic Discussion:** References to Arabic grammatical rules, specifically \"التنوين\" (nunation) and \"الوقف\" (pausing).\n*   **Thematic Mentions:** Includes phrases related to \"جلب النساء\" (bringing women), \"الحق\" (truth), and \"الترحيب\" (welcome).\n*   **Concluding/Evaluative Language:** Contains phrases such as \"كل ما ذكر\" (all that was mentioned), \"انتهت كلمتين\" (two words ended), and \"هباءا\" (in vain).\n*   **Specific Imagery:** A distinct phrase \"حلبهم فطاس\" (their milk/drawing fatas) is noted."
+    }
+  ],
+  "d775a8ba-c8b5-4791-8576-dbc83bb3bdd0": []
+}

@@ -1,0 +1,35 @@
+{
+  "session_id": "cc32f785-c331-425b-abe8-8796020dc912",
+  "files": [
+    "Devis_Location_Matériels.docx"
+  ],
+  "updated_at": "2026-07-02T00:26:29.120099",
+  "file_name": "Devis_Location_Matériels.docx",
+  "title": "est ce que le taux de tva de cette doc...",
+  "session_type": "document",
+  "research_question": "est ce que le taux de tva de cette doc est calcules correctement par rapport aux taux de tva actuel de la tunisie ?",
+  "last_research_sources": [
+    {
+      "id": 3,
+      "type": "document",
+      "title": "Devis_Location_Matériels.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "| Engin | Marque et Caractéristique | Unité | Prix U HT | Prix TOTAL |\n| --- | --- | --- | --- | --- |\n| Gradaire | Caterpillar 120H | 30j | 750.000 | 22.500 ,000 |\n| Prix total HT | 22500.000 |  |  |  |\n| TVA 19% | 4.275 ,000 |  |  |  |\n| Total TTC | 26775 ,000 |  |  |  |"
+    },
+    {
+      "id": 4,
+      "type": "web",
+      "title": "calcultva.org",
+      "subtitle": "calcultva.org",
+      "url": "https://calcultva.org/tunisie.html",
+      "icon": "🌐",
+      "excerpt": "Calcul TVA  calcultva.org\n\n# Calcul TVA\n\nTunisie:  19 %  13 %  7 %\n\nMode avancé: Vous verrez l'effet de l'arrondi sur le montant de TVA à payer. Voyez comment le calcul est effectué.\n\nVoir également: Calculatrice pourcentage\n\nLe calculateur de TVA calcule le montant de la TVA ainsi que le prix HT et TTC. Le pourcentage de TVA est pré-rempli, mais vous pouvez le modifier ou supprimer la valeur. Les"
+    }
+  ],
+  "last_research_answer": "✅ Le taux de TVA de 19% appliqué dans le document est l'un des taux de TVA actuels en Tunisie, et son calcul est mathématiquement correct.\n\n## Taux de TVA appliqué et son calcul dans le devis\nLe devis de la Société T.P et services, daté du 14/04/2026 et destiné à la Société SOBAT, présente un Prix total HT de 22.500,000 pour la location d'un Engin Gradaire Caterpillar 120H pour une durée de 30 jours [3]. La TVA est appliquée à un taux de 19% sur ce montant, résultant en un montant de TVA de 4.275,000 [3]. Le Total TTC est ainsi calculé à 26.775,000 [3]. Les calculs sont arithmétiquement exacts (22.500,000 * 0.19 = 4.275,000 et 22.500,000 + 4.275,000 = 26.775,000) [3].\n\n## Conformité avec les taux de TVA tunisiens\nLes taux de TVA applicables en Tunisie incluent 19%, 13% et 7% [4]. Le taux de 19% utilisé dans le devis correspond à l'un des taux de TVA officiellement reconnus et en vigueur en Tunisie [4].\n\n## Conclusion\nLe taux de TVA de 19% utilisé dans le devis est conforme aux taux de TVA actuels en Tunisie, et son application ainsi que le calcul du montant de la TVA sont mathématiquement corrects. Aucune contradiction n"
+}

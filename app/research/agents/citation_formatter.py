@@ -46,7 +46,7 @@ def citation_formatter_node(state: ResearchState) -> dict:
             sources.append({
                 "id":       s["id"],
                 "type":     "web",
-                "title":    s["title"] or domain,
+                "title": domain if domain != "Web" else (s["title"] or "Web")[:50],
                 "subtitle": domain,
                 "url":      url,
                 "icon":     "🌐",

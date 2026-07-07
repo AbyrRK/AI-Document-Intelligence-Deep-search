@@ -1,0 +1,22 @@
+{
+  "session_id": "research_7c3bd7de88e9",
+  "updated_at": "2026-07-01T08:37:42.004696",
+  "messages": [
+    {
+      "role": "human",
+      "content": "Which industries are growing the fastest globally?"
+    },
+    {
+      "role": "ai",
+      "content": "I am specialized in business documents only (invoices, contracts, reports, quotes, financial statements). I cannot help with this question."
+    },
+    {
+      "role": "human",
+      "content": "What are the biggest business trends this year?"
+    },
+    {
+      "role": "ai",
+      "content": "✅ The biggest business trends for 2024 include the strategic monetization of data, the rise of Generative AI, sustainable business practices, and the increasing accessibility of space tourism, supported by a rebound in frontier technology investments.\n\n## The Strategic Data Economy\nThe Data Economy is a primary business trend for 2024, positioning data as an increasingly valuable business asset [1][2"
+    }
+  ]
+}

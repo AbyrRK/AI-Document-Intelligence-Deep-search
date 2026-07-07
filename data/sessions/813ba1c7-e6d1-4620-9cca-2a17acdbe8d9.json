@@ -1,0 +1,30 @@
+{
+  "session_id": "813ba1c7-e6d1-4620-9cca-2a17acdbe8d9",
+  "updated_at": "2026-07-01T11:18:09.381709",
+  "messages": [
+    {
+      "role": "ai",
+      "content": "Voici un bref résumé du document :\n\n*   Le document est une proposition commerciale ou une facture émise par la \"Société T.P et services\".\n*   Il détaille des prestations de travaux publics et d'assainissement, incluant l'installation de conduites PVC, de regards de visite, le raccordement au réseau Onas, et la réparation de chaussée.\n*   Le coût total hors taxes des services s'élève à 32.600,000, et le montant toutes taxes comprises (TTC) est de 38.794,000, incluant une TVA de 19%."
+    },
+    {
+      "role": "ai",
+      "content": "Voici un bref résumé du document :\n\n*   Le document est une proposition commerciale ou une facture émise par la \"Société T.P et services\".\n*   Il détaille des prestations de travaux publics et d'assainissement, incluant l'installation de conduites PVC, de regards de visite, le raccordement au réseau Onas, et la réparation de chaussée.\n*   Le coût total hors taxes des services s'élève à 32.600,000, et le montant toutes taxes comprises (TTC) est de 38.794,000, incluant une TVA de 19%."
+    },
+    {
+      "role": "human",
+      "content": "est ce que le taux de tva de cette doc est calcules correctement par rapport aux taux de tva actuel de la tunisie ?"
+    },
+    {
+      "role": "ai",
+      "content": "✅ Le taux de TVA et son calcul sont corrects selon les méthodes fournies par les sources pour un taux de 19%, bien que l'applicabilité du FODEC pour ce type de travaux ne soit pas précisée.\n\n## Taux de TVA Appliqué\nLe devis N° 32 indique un taux de TVA de 19% [3]. Les sources [5"
+    },
+    {
+      "role": "human",
+      "content": "how is batman ?"
+    },
+    {
+      "role": "ai",
+      "content": "I am specialized in business documents only (invoices, contracts, reports, quotes, financial statements). I cannot help with this question."
+    }
+  ]
+}

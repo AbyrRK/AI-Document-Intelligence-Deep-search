@@ -3,13 +3,28 @@ from app.services.vector_store import vector_store
 from qdrant_client.http.models import Filter, FieldCondition, MatchValue
 from langchain_core.documents import Document
 
-# Documents with this many chunks or fewer use high-k semantic search
-# instead of raw scroll — ensures proper cosine scoring for all chunks
 _SMALL_DOC_THRESHOLD = 10
+
+# ── Module-level constants (not inside any function) ──────────────────────────
+SUMMARY_SIGNALS = {
+    "ttc", "tva", "total", "net à payer", "montant total",
+    "hors taxes", "toutes taxes",
+    "مجموع", "الإجمالي", "إجمالي", "ضريبة",
+}
+
+
+def _has_summary_chunk(chunks: list) -> bool:
+    for c in chunks:
+        content_lower = (
+            c.get("content", "").lower() if isinstance(c, dict)
+            else c.page_content.lower()
+        )
+        if any(sig in content_lower for sig in SUMMARY_SIGNALS):
+            return True
+    return False
 
 
 def _count_chunks(doc_id: str = "", session_id: str = "") -> int:
-    """Count total chunks for a doc or session — fast, no vectors fetched."""
     try:
         if doc_id:
             filt = Filter(must=[FieldCondition(
@@ -32,15 +47,10 @@ def _count_chunks(doc_id: str = "", session_id: str = "") -> int:
         return len(points)
     except Exception as e:
         print(f"📄 RAG: chunk count failed: {e}")
-        return 999  # assume large — fall back to normal path
+        return 999
 
 
 def _get_tail_chunks(doc_id: str = "", session_id: str = "", n: int = 5) -> list:
-    """
-    Fetch the last N chunks by chunk_index — totals/signatures live at the bottom.
-    Used for large docs only to catch summary rows that semantic search misses.
-    Returns (Document, point_id) tuples.
-    """
     try:
         if doc_id:
             filt = Filter(must=[FieldCondition(
@@ -84,10 +94,6 @@ def _get_tail_chunks(doc_id: str = "", session_id: str = "", n: int = 5) -> list
 
 
 def _wrap_search_results(docs: list) -> list:
-    """
-    Wrap Document objects from semantic search into (Document, dedup_key) tuples.
-    Uses content[:120] as dedup key since semantic search doesn't return point IDs.
-    """
     return [(doc, doc.page_content[:120].strip()) for doc in docs]
 
 
@@ -102,16 +108,12 @@ def rag_node(state: ResearchState) -> dict:
         print("📄 RAG: ⚠️  No session_id or doc_id — skipping document search")
         return {"rag_results": [], "rag_confidence": 0.0}
 
-    # ── Count chunks to choose retrieval strategy ─────────────────────────────
     total_chunks = _count_chunks(
         doc_id=doc_id,
         session_id=session_id if not doc_id else ""
     )
 
     if total_chunks <= _SMALL_DOC_THRESHOLD:
-        # ── Small doc: semantic search with k=total_chunks ────────────────────
-        # This gets ALL chunks back, properly scored by cosine similarity.
-        # No raw scroll — every chunk gets a real relevance score.
         print(f"📄 RAG: small doc ({total_chunks} chunks) → high-k semantic search")
         if doc_id:
             raw = vector_store.search_by_doc(query, doc_id=doc_id, k=total_chunks)
@@ -124,10 +126,9 @@ def rag_node(state: ResearchState) -> dict:
             print(f"📄 RAG: used session scope → {len(raw)} chunks")
 
         paired      = _wrap_search_results(raw)
-        tail_paired = []  # not needed — semantic search already covers all chunks
+        tail_paired = []
 
     else:
-        # ── Large doc: semantic search + tail chunks ──────────────────────────
         if doc_id:
             raw = vector_store.search_by_doc(query, doc_id=doc_id, k=15)
             print(f"📄 RAG: used doc_id scope → {len(raw)} chunks")
@@ -156,6 +157,22 @@ def rag_node(state: ResearchState) -> dict:
         print("📄 RAG: ⚠️  No chunks found")
         return {"rag_results": [], "rag_confidence": 0.0}
 
+    # ── Totals safety net — runs BEFORE format loop ───────────────────────────
+    if not _has_summary_chunk(merged):
+        print("📄 RAG: ⚠️  No totals/TVA chunk found — force-fetching tail chunks")
+        force_tail = _get_tail_chunks(
+            doc_id=doc_id,
+            session_id=session_id if not doc_id else "",
+            n=2
+        )
+        for doc, dedup_key in force_tail:
+            if dedup_key not in seen:
+                seen.add(dedup_key)
+                merged.append(doc)
+                print(f"📄 RAG: ✅ force-added tail chunk ({len(doc.page_content)} chars)")
+            else:
+                print("📄 RAG: tail chunk already in merged — skipping")
+
     # ── Format results ────────────────────────────────────────────────────────
     formatted = []
     for r in merged:
@@ -169,14 +186,15 @@ def rag_node(state: ResearchState) -> dict:
         score        = meta.get("score", 0.7)
 
         formatted.append({
-            "content":     r.page_content,
-            "file_name":   file_name,
-            "page":        page,
-            "doc_id":      chunk_doc_id,
-            "chunk_index": chunk_index,
-            "session_id":  session_id,
-            "source_type": "document",
-            "score":       score,
+            "content":      r.page_content,
+            "file_name":    file_name,
+            "page":         page,
+            "doc_id":       chunk_doc_id,
+            "chunk_index":  chunk_index,
+            "session_id":   session_id,
+            "source_type":  "document",
+            "score":        score,
+            "content_type": meta.get("content_type") or nested.get("content_type", "text"),
         })
 
     confidence = min(len(formatted) / 10, 1.0)

@@ -1,0 +1,14 @@
+{
+  "session_id": "research_0b26b013f1eb",
+  "updated_at": "2026-07-01T08:58:46.694295",
+  "messages": [
+    {
+      "role": "human",
+      "content": "What are the biggest business trends this year?"
+    },
+    {
+      "role": "ai",
+      "content": "❌ Research failed: tracing_v2_enabled() got an unexpected keyword argument 'run_name'"
+    }
+  ]
+}

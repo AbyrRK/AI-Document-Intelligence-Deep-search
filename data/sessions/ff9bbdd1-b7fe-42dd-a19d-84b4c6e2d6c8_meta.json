@@ -1,0 +1,65 @@
+{
+  "session_id": "ff9bbdd1-b7fe-42dd-a19d-84b4c6e2d6c8",
+  "files": [
+    "facture1.docx"
+  ],
+  "updated_at": "2026-07-06T22:50:48.067944",
+  "file_name": "facture1.docx",
+  "title": "est ce que le taux de tva de cette doc...",
+  "session_type": "document",
+  "research_question": "est ce que le taux de tva de cette doc est calcules correctement par rapport aux taux de tva actuel de la tunisie ?",
+  "last_research_sources": [
+    {
+      "id": 1,
+      "type": "document",
+      "title": "facture1.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "Société T.P et services\n\nARIANA CENTRE BLOC C BUREAU 408\n\nT.V.A 1823212 V /A /M 000\n\nTEL 98 940 912 FAX 73 252 034\n\nTunis le, 13/05/2026\n\nFACTURE\n\nClient : STE JOB ENGIN\n\nArrêter la présente facture a la somme de huit milles quatre cent soixante dix huit dinars 750 millimes\n\nSignature"
+    },
+    {
+      "id": 5,
+      "type": "web",
+      "title": "tvacalcul.com",
+      "subtitle": "tvacalcul.com",
+      "url": "https://tvacalcul.com/tunisie",
+      "icon": "🌐",
+      "excerpt": "Ex. : 1 000 DT HT → 70,00 DT TVA → 1 070,00 DT TTC\n\n\\ Ces taux sont fournis à titre indicatif. Vérifiez toujours les taux officiels auprès de l'administration fiscale de Tunisie.\n\n## Questions fréquentes\n\nLa Tunisie applique trois taux de TVA : 19 % (taux normal), 13 % (taux réduit pour les services financiers et assurances) et 7 % (taux réduit pour les produits de première nécessité).\n\nMultipliez"
+    },
+    {
+      "id": 7,
+      "type": "web",
+      "title": "calcultva.org",
+      "subtitle": "calcultva.org",
+      "url": "https://calcultva.org/tunisie.html",
+      "icon": "🌐",
+      "excerpt": "Calcul TVA  calcultva.org\n\n# Calcul TVA\n\nTunisie:  19 %  13 %  7 %\n\nMode avancé: Vous verrez l'effet de l'arrondi sur le montant de TVA à payer. Voyez comment le calcul est effectué.\n\nVoir également: Calculatrice pourcentage\n\nLe calculateur de TVA calcule le montant de la TVA ainsi que le prix HT et TTC. Le pourcentage de TVA est pré-rempli, mais vous pouvez le modifier ou supprimer la valeur. Les"
+    },
+    {
+      "id": 6,
+      "type": "web",
+      "title": "efacturetn.com",
+      "subtitle": "efacturetn.com",
+      "url": "https://efacturetn.com/blog/taux-tva-tunisie-2026-guide-complet",
+      "icon": "🌐",
+      "excerpt": "### Comment calculer la TVA ?\n\nLe calcul est simple :\n\n Montant HT vers TTC : TTC = HT x (1 + taux TVA)\n Montant TTC vers HT : HT = TTC / (1 + taux TVA)\n Montant TVA : TVA = HT x taux TVA\n\nExemple : pour un produit à 100 DT HT avec TVA 19% :  \nTVA = 100 x 0.19 = 19.000 DT  \nTTC = 100 + 19 = 119.000 DT\n\n### Utilisez notre simulateur gratuit\n\neFactureTN met à votre disposition un simulateur de TVA g"
+    },
+    {
+      "id": 2,
+      "type": "document",
+      "title": "facture1.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "| Articles | Désignation | Unité | Quantité | Prix U HT | Prix TOTAL (DT) |\n| --- | --- | --- | --- | --- | --- |\n| 1 | Location niveleuse | Jour | 9j et demi | 750,000 | 7.125,000 |\n|  | Prix total HT | 7.125,000 |  |  |  |\n|  | TVA 19% | 1.353,750 |  |  |  |\n|  | Total TTC | 8.478,750 |  |  |  |"
+    }
+  ],
+  "last_research_answer": "✅ Le taux de TVA appliqué sur cette facture est calculé correctement et correspond au taux normal en vigueur en Tunisie.\n\n## Taux de TVA appliqué et son calcul sur la facture\nLa facture indique un \"Prix total HT\" de 7.125,000 DT [2]. Un taux de TVA de 19% est appliqué, résultant en un montant de TVA de 1.353,750 DT [2]. Le \"Total TTC\" est de 8.478,750 DT [2]. Arithmétiquement, le calcul (7.125,000 DT * 0,19 = 1.353,750 DT) est exact, et l'addition du HT et de la TVA (7.125,000 DT + 1.353,750 DT = 8.478,750 DT) est également correcte [2]. Le montant total TTC est par ailleurs confirmé verbalement comme \"huit milles quatre cent soixante dix huit dinars 750 millimes\" [1], ce qui correspond à 8.478,750 DT.\n\n## Conformité du taux de TVA avec la législation tunisienne\nEn Tunisie, plusieurs taux de TVA sont en vigueur, notamment 19%, 13% et 7% [5][7]. Le taux de 19% est spécifiquement identifié comme le taux normal de TVA [5]. Le taux de 19% appliqué sur la facture pour la location de niveleuse [2] est donc conforme aux taux de TVA actuels mentionnés pour la Tunisie [5][7].\n\n## Méthode de calcul de la TVA\nLa méthode standard de calcul de la TVA stipule que le montant de la TVA est obtenu en multipliant le montant HT par le taux de TVA (TVA = HT x taux TVA), et le montant TTC est la somme du HT et de la TVA (TTC = HT + TVA) [6]. La facture suit cette méthode en calculant la TVA à partir du montant HT et en additionnant la TVA au HT pour obtenir le TTC [2].\n\n## Conclusion\nLe taux de TVA de 19% appliqué sur la facture est calculé avec exactitude par rapport au montant HT indiqué et correspond au taux normal de TVA en vigueur en Tunisie. La méthode de calcul employée est également conforme aux pratiques standards."
+}

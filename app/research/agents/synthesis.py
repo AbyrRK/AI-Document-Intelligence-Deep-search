@@ -4,6 +4,8 @@ import re
 import json
 from urllib.parse import urlparse
 
+from sympy import content
+
 from app.research.state import ResearchState
 from app.services.llm_client import llm
 
@@ -43,7 +45,8 @@ def synthesis_node(state: ResearchState) -> dict:
         name    = r.get("file_name", f"Document-{i}")
         page    = r.get("page", "")
         content = r.get("content", "")
-        snippet = content[:_DOC_SNIPPET_LEN]
+        snippet_len = 1000 if r.get("content_type") == "table" else _DOC_SNIPPET_LEN
+        snippet = content[:snippet_len]
         source_blocks.append(f"[{i}] {name}{f', p.{page}' if page else ''}:\n{snippet}")
         source_map.append({
             "id":        i,
@@ -81,6 +84,9 @@ def synthesis_node(state: ResearchState) -> dict:
         "fr": "Answer entirely in French. Do not use any other language.",
         "en": "Answer entirely in English. Do not use any other language.",
     }.get(lang, f"Answer in the same language as the question ({lang}).")
+    
+    from app.services.pii_scrubber import scrub_prompt
+    sources_text = scrub_prompt(sources_text, language=lang)
 
     if is_recommendation:
         llm_prompt = _recommendation_prompt(question, sources_text, lang_instruction)
@@ -91,7 +97,7 @@ def synthesis_node(state: ResearchState) -> dict:
         answer = llm.generate_sync(
             prompt=llm_prompt,
             temperature=0.7,
-            max_tokens=2048,
+            max_tokens=3000,      
             use_cache=True,
         )
 
@@ -231,20 +237,26 @@ def _rate_limit_message(lang: str) -> str:
 
 
 def _extract_recommendations(answer: str) -> tuple[list, str]:
-    """
-    Pull the ```json recommendations block out of the answer.
-    Returns (recommendations_list, clean_answer_without_json_block).
-    """
+    # Match either a complete ```json block or a truncated one
     pattern = r'```json\s*(\{.*?"recommendations".*?\})\s*```'
     match = re.search(pattern, answer, re.DOTALL)
 
-    if not match:
-        return [], answer
+    if match:
+        try:
+            data = json.loads(match.group(1))
+            recommendations = data.get("recommendations", [])
+            clean_answer = answer[:match.start()].rstrip()
+            return recommendations, clean_answer
+        except Exception:
+            # JSON malformed — strip the block anyway
+            clean_answer = answer[:match.start()].rstrip()
+            return [], clean_answer
 
-    try:
-        data = json.loads(match.group(1))
-        recommendations = data.get("recommendations", [])
-        clean_answer = answer[:match.start()].rstrip()
-        return recommendations, clean_answer
-    except Exception:
-        return [], answer
+    # Also strip truncated/unclosed ```json blocks that never got a closing ```
+    partial_pattern = r'```json\s*\{.*?"recommendations".*'
+    partial_match = re.search(partial_pattern, answer, re.DOTALL)
+    if partial_match:
+        clean_answer = answer[:partial_match.start()].rstrip()
+        return [], clean_answer
+
+    return [], answer

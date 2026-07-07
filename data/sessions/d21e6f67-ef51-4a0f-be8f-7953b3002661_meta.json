@@ -1,0 +1,65 @@
+{
+  "session_id": "d21e6f67-ef51-4a0f-be8f-7953b3002661",
+  "files": [
+    "Devis_Location_Matériels.docx"
+  ],
+  "updated_at": "2026-07-06T20:25:27.997110",
+  "file_name": "Devis_Location_Matériels.docx",
+  "title": "est ce que le taux de tva de cette doc...",
+  "session_type": "document",
+  "research_question": "est ce que le taux de tva de cette doc est calcules correctement par rapport aux taux de tva actuel de la tunisie ?",
+  "last_research_sources": [
+    {
+      "id": 1,
+      "type": "document",
+      "title": "Devis_Location_Matériels.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "Société T.P et services\n\nARIANA CENTRE BLOC C BUREAU 408\n\nT.V.A 1823212 V /A /M 000\n\nTEL 98 940 912 FAX 73 252 034\n\nTunis le, 14/04/2026\n\nDevis Location Matériels\n\nSociété SOBAT\n\nNous nous mettons à votre disposition le matériels suivant pour une durée de 30 jours .\n\nNB : Le prix unitaire y compris gazoil\n\nLe payement sera par virement d'avance pour chaque 10 jours de travail\n\nSoit de 8.925,000 TT"
+    },
+    {
+      "id": 5,
+      "type": "web",
+      "title": "efacturetn.com",
+      "subtitle": "efacturetn.com",
+      "url": "https://efacturetn.com/blog/taux-tva-tunisie-2026-guide-complet",
+      "icon": "🌐",
+      "excerpt": "### Comment calculer la TVA ?\n\nLe calcul est simple :\n\n Montant HT vers TTC : TTC = HT x (1 + taux TVA)\n Montant TTC vers HT : HT = TTC / (1 + taux TVA)\n Montant TVA : TVA = HT x taux TVA\n\nExemple : pour un produit à 100 DT HT avec TVA 19% :  \nTVA = 100 x 0.19 = 19.000 DT  \nTTC = 100 + 19 = 119.000 DT\n\n### Utilisez notre simulateur gratuit\n\neFactureTN met à votre disposition un simulateur de TVA g"
+    },
+    {
+      "id": 2,
+      "type": "document",
+      "title": "Devis_Location_Matériels.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "| Engin | Marque et Caractéristique | Unité | Prix U HT | Prix TOTAL |\n| --- | --- | --- | --- | --- |\n| Gradaire | Caterpillar 120H | 30j | 750.000 | 22.500 ,000 |\n| Prix total HT | 22500.000 |  |  |  |\n| TVA 19% | 4.275 ,000 |  |  |  |\n| Total TTC | 26775 ,000 |  |  |  |"
+    },
+    {
+      "id": 4,
+      "type": "web",
+      "title": "calcultva.org",
+      "subtitle": "calcultva.org",
+      "url": "https://calcultva.org/tunisie.html",
+      "icon": "🌐",
+      "excerpt": "Calcul TVA  calcultva.org\n\n# Calcul TVA\n\nTunisie:  19 %  13 %  7 %\n\nMode avancé: Vous verrez l'effet de l'arrondi sur le montant de TVA à payer. Voyez comment le calcul est effectué.\n\nVoir également: Calculatrice pourcentage\n\nLe calculateur de TVA calcule le montant de la TVA ainsi que le prix HT et TTC. Le pourcentage de TVA est pré-rempli, mais vous pouvez le modifier ou supprimer la valeur. Les"
+    },
+    {
+      "id": 6,
+      "type": "web",
+      "title": "vatcompliance.co",
+      "subtitle": "vatcompliance.co",
+      "url": "https://vatcompliance.co/fr/manuels/tva/tunisie",
+      "icon": "🌐",
+      "excerpt": "Goods\n\nProvinces\n\nBiens\n\nAbout\n\nGoods\n\nAbout\n\nBiens\n\nBiens\n\nBiens\n\n## TVA Taux standard\n\nLe taux standard de TVA en Tunisie en 2024 est de 19%, qui s’applique aux livraisons de biens en Tunisie et à l’importation, avec quelques exceptions comme les produits alimentaires, les fournitures scolaires, la pêche et les produits agricoles.\n\nTaux standard de TVA 19% Taux réduit de TVA - Seuils TND 100,000"
+    }
+  ],
+  "last_research_answer": "✅ Le taux de TVA appliqué dans le devis est correct et conforme à la réglementation tunisienne actuelle.\n\n## Taux de TVA appliqué dans le devis\n\nLe devis de location de matériel de la société T.P et services applique un taux de TVA de 19% [1][2]. Le calcul est présenté comme suit : montant HT de 22.500.000 TND, TVA 19% de 4.275.000 TND, pour un total TTC de 26.775.000 TND [2].\n\n## Conformité avec le taux standard tunisien\n\nLe taux de 19% correspond au taux standard de TVA en vigueur en Tunisie en 2024-2026 [4][6]. Selon les sources consultées, ce taux s'applique aux livraisons de biens et services en Tunisie, y compris la location de matériels [6].\n\n## Vérification du calcul mathématique\n\nLe calcul appliqué suit la formule correcte : TVA = HT × taux TVA, soit 22.500.000 × 0,19 = 4.275.000 TND [5]. Le total TTC de 26.775.000 TND est également exact (22.500.000 + 4.275.000) [2][5].\n\n## Conclusion\n\nLe devis applique correctement le taux de TVA de 19% en vigueur en Tunisie et le calcul mathématique est exact. Aucune correction n'est nécessaire sur cet aspect fiscal [2][4][6]."
+}

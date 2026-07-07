@@ -1,0 +1,74 @@
+{
+  "session_id": "5a43e630-5312-44d7-970e-fb74a8faa4d2",
+  "files": [
+    "Devis global.docx"
+  ],
+  "updated_at": "2026-07-01T10:56:34.459556",
+  "file_name": "Devis global.docx",
+  "title": "est ce que le taux de tva de cette doc...",
+  "session_type": "document",
+  "research_question": "est ce que le taux de tva de cette doc est calcules correctement par rapport aux taux de tva actuel de la tunisie ?",
+  "last_research_sources": [
+    {
+      "id": 1,
+      "type": "document",
+      "title": "Devis global.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "Société T.P et services\n\nARIANA CENTRE BLOC C BUREAU 408\n\nT.V.A 1823212 V /A /M 000\n\nTEL 98 940 912 FAX 73 252 034\n\nTunis le, 23/01/2026\n\nDevis Global\n\nClient : Mahbouba Hammami\n\nAdresse : El Mghira\n\nSignature"
+    },
+    {
+      "id": 5,
+      "type": "web",
+      "title": "Tunisie - Calcul TVA",
+      "subtitle": "calcultva.org",
+      "url": "https://calcultva.org/tunisie.html",
+      "icon": "🌐",
+      "excerpt": "Calcul TVA  calcultva.org\n\n# Calcul TVA\n\nTunisie:  19 %  13 %  7 %\n\nMode avancé: Vous verrez l'effet de l'arrondi sur le montant de TVA à payer. Voyez comment le calcul est effectué.\n\nVoir également: Calculatrice pourcentage\n\nLe calculateur de TVA calcule le montant de la TVA ainsi que le prix HT et TTC. Le pourcentage de TVA est pré-rempli, mais vous pouvez le modifier ou supprimer la valeur. Les"
+    },
+    {
+      "id": 6,
+      "type": "web",
+      "title": "Tunisie - Lovat Compliance",
+      "subtitle": "vatcompliance.co",
+      "url": "https://vatcompliance.co/fr/manuels/tva/tunisie",
+      "icon": "🌐",
+      "excerpt": "Goods\n\nProvinces\n\nBiens\n\nAbout\n\nGoods\n\nAbout\n\nBiens\n\nBiens\n\nBiens\n\n## TVA Taux standard\n\nLe taux standard de TVA en Tunisie en 2024 est de 19%, qui s’applique aux livraisons de biens en Tunisie et à l’importation, avec quelques exceptions comme les produits alimentaires, les fournitures scolaires, la pêche et les produits agricoles.\n\nTaux standard de TVA 19% Taux réduit de TVA - Seuils TND 100,000"
+    },
+    {
+      "id": 7,
+      "type": "web",
+      "title": "Calculateur TVA Tunisie 2026 - Calcul HT ↔ TTC Gratuit | Finco",
+      "subtitle": "finco.tn",
+      "url": "https://finco.tn/outils/calculateur-tva",
+      "icon": "🌐",
+      "excerpt": "### Les trois taux de TVA en Tunisie\n\nLe taux standard de 19% s'applique à la plupart des biens et services. C'est le taux par défaut pour les produits de consommation courante, les services professionnels, les travaux de construction et la majorité des prestations commerciales.\n\nLe taux réduit de 13% concerne certains produits et services spécifiques, notamment les prestations hôtelières, certain"
+    },
+    {
+      "id": 4,
+      "type": "web",
+      "title": "Taux de TVA en Tunisie 2026 : 0%, 7%, 13%, 19% | eFactureTN | eFactureTN",
+      "subtitle": "efacturetn.com",
+      "url": "https://efacturetn.com/blog/taux-tva-tunisie-2026-guide-complet",
+      "icon": "🌐",
+      "excerpt": "### Comment calculer la TVA ?\n\nLe calcul est simple :\n\n Montant HT vers TTC : TTC = HT x (1 + taux TVA)\n Montant TTC vers HT : HT = TTC / (1 + taux TVA)\n Montant TVA : TVA = HT x taux TVA\n\nExemple : pour un produit à 100 DT HT avec TVA 19% :  \nTVA = 100 x 0.19 = 19.000 DT  \nTTC = 100 + 19 = 119.000 DT\n\n### Utilisez notre simulateur gratuit\n\neFactureTN met à votre disposition un simulateur de TVA g"
+    },
+    {
+      "id": 2,
+      "type": "document",
+      "title": "Devis global.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "| Articles | Désignation | Unité | Quantité | Prix U HT | Prix TOTAL (DT) |\n| --- | --- | --- | --- | --- | --- |\n| 1 | Beton armée | M³ | 11 | 875 | 9,625 |\n| 2 | Construction en brique | M² | 40 | 120 | 4,800 |\n| 3 | Enduit | M² | 80 | 35 | 2,800 |\n| 4 | Portes | U | 1 | 1,400 |  |\n| 5 | Fenêtres | U | 2 | 700 | 1,400 |\n| 6 | Staf plâtre | M² | 16 | 35 | 560 |\n| 7 | Faillances | M² | 20 | 150 | "
+    }
+  ],
+  "last_research_answer": "✅ Le taux de TVA appliqué dans le devis est correctement calculé et correspond aux taux actuels en Tunisie.\n\n## Taux de TVA appliqué dans le devis\nLe devis \"Devis Global\" daté du 23/01/2026, émis par Société T.P et services, indique un \"Prix total HT\" de 31 965 DT. Il applique explicitement une \"TVA 19%\" qui se monte à 6 073,35 DT, portant le \"Total TTC\" à 38 038,35 DT [1][2].\n\n## Conformité du taux de TVA tunisien\nLe taux standard de TVA en Tunisie est de 19% [5][6]. Ce taux s'applique à la majorité des biens et services, y compris les travaux de construction [7]. Bien que certaines sources mentionnent l'année 2024 pour ce taux [6], d'autres indiquent qu'il est pertinent pour 2026, notamment pour les travaux de construction [7]. Les méthodes de calcul de la TVA confirment que le montant de la TVA est obtenu en multipliant le montant HT par le taux de TVA (par exemple, 100 DT HT x 0.19 = 19 DT de TVA) [4].\n\n## Vérification du calcul de la TVA\nEn appliquant le taux de TVA standard de 19% au \"Prix total HT\" du devis (31 965 DT [2]), le calcul est le suivant :\n*   Montant TVA = 31 965 DT (HT) x 0.19 = 6 073,35 DT [2][4].\n*   Montant TTC = 31 965 DT (HT) + 6 073,35 DT (TVA) = 38 038,35 DT [2][4].\nCes montants correspondent exactement à ceux indiqués dans le devis pour la \"TVA 19%\" et le \"Total TTC\" [2].\n\n## Conclusion\nLe taux de TVA de 19% appliqué dans le devis est conforme au taux standard en vigueur en Tunisie pour les travaux de construction à la date du devis. Le calcul de la TVA et du total TTC est exact."
+}

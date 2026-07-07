@@ -47,6 +47,8 @@ ALLOWED_EXTENSIONS = {
 # Background task
 # ─────────────────────────────────────────────────────────────────────────────
 
+import time
+
 def _background_full_index(
     tmp_path:      str,
     session_id:    str,
@@ -54,17 +56,44 @@ def _background_full_index(
     original_name: str = "",
 ) -> None:
     try:
-        process_document(
-            file_path=tmp_path,
-            mode="full",
-            index=True,
-            session_id=session_id,
-            file_name=original_name,
-            doc_id=doc_id,
-        )
-        print(f"✅ Background full indexing complete — session: {session_id}, doc_id: {doc_id[:8]}...")
+        # First: flush any deferred chunks from the lazy path
+        from app.services.document_service import _deferred_chunks
+        from app.services.vector_store import vector_store as vs
+
+        if session_id in _deferred_chunks:
+            deferred = _deferred_chunks.pop(session_id)
+            if deferred:
+                print(f"🚀 Flushing {len(deferred)} deferred chunks for session {session_id[:8]}...")
+                # Retry loop for embedding
+                for attempt in range(4):
+                    try:
+                        vs.ensure_collection()
+                        count = vs.add_documents(deferred, session_id=session_id)
+                        print(f"✅ Deferred indexing complete: {count} chunks for session {session_id[:8]}")
+                        break
+                    except Exception as e:
+                        wait = 2 ** attempt
+                        print(f"⚠️  Embedding attempt {attempt+1} failed: {e}. Retrying in {wait}s...")
+                        time.sleep(wait)
+                else:
+                    print(f"❌ All embedding attempts failed for session {session_id[:8]}")
+                    return
+
+        # Then: index remaining pages not covered by brief mode
+        # (only if file still exists)
+        if Path(tmp_path).exists():
+            process_document(
+                file_path=tmp_path,
+                mode="full",
+                index=True,
+                session_id=session_id,
+                file_name=original_name,
+                doc_id=doc_id,
+            )
+            print(f"✅ Full indexing complete — session: {session_id[:8]}, doc_id: {doc_id[:8]}")
+
     except Exception as e:
-        print(f"❌ Background indexing failed — session: {session_id} — {e}")
+        print(f"❌ Background indexing failed — session: {session_id[:8]} — {e}")
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 

@@ -10,6 +10,8 @@ load_dotenv(ROOT_DIR / ".env")
 class Settings:
     # LLM Providers
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_API_KEY_2: str = os.getenv("GEMINI_API_KEY_2", "")
+    GEMINI_API_KEY_3: str = os.getenv("GEMINI_API_KEY_3", "")
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 
@@ -33,8 +35,17 @@ class Settings:
     )
 
     # LLM Provider preference
-    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini")  # gemini | openrouter | azure
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini")
+
+    @property
+    def gemini_keys(self) -> list:
+        """Returns all available Gemini API keys, filtering out empty ones."""
+        keys = [
+            self.GEMINI_API_KEY,
+            self.GEMINI_API_KEY_2,
+            self.GEMINI_API_KEY_3,
+        ]
+        return [k for k in keys if k.strip()]
+
 
 settings = Settings()
-
-

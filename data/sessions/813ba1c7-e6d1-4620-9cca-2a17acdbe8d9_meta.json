@@ -1,0 +1,26 @@
+{
+  "session_id": "813ba1c7-e6d1-4620-9cca-2a17acdbe8d9",
+  "files": [
+    "Devis 32.docx"
+  ],
+  "updated_at": "2026-07-01T11:18:04.087136",
+  "file_name": "Devis 32.docx",
+  "title": "how is batman",
+  "session_type": "research",
+  "research_question": "how is batman ?",
+  "last_research_sources": [
+    {
+      "id": 3,
+      "type": "document",
+      "title": "Devis 32.docx",
+      "subtitle": "Page 1",
+      "url": null,
+      "icon": "📄",
+      "doc_id": "",
+      "chunk_index": 0,
+      "page": 1,
+      "excerpt": "| Désignation | Unité | Quantité | Prix U HT | Prix TOTAL |\n| --- | --- | --- | --- | --- |\n| Conduite PVC ∅ 250, y compris fouille et remblaiement et mise a la cote | ML | 80 | 270 ,000 | 21.600,000 |\n| Regard de visite ∅ 1000, y compris tampon lourd type Onas | U | 4 | 1.800,000 | 7.200,000 |\n| Caillage de la route existante et rattrapage de la couche d’enrobe | M² | 15 | 120 ,000 | 1.800,000 |\n"
+    }
+  ],
+  "last_research_answer": "✅ Le taux de TVA et son calcul sont corrects selon les méthodes fournies par les sources pour un taux de 19%, bien que l'applicabilité du FODEC pour ce type de travaux ne soit pas précisée.\n\n## Taux de TVA Appliqué\nLe devis N° 32 indique un taux de TVA de 19% [3]. Les sources [5"
+}

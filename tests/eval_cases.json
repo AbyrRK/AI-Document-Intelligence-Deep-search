@@ -150,5 +150,20 @@
     "expect_citation": false,
     "expect_refusal": true,
     "expect_lang": null
-  }
+  },
+
+{
+  "id": "devis_001",
+  "question": "Quel est le prix total TTC du devis?",
+  "expect_refusal": false,
+  "expect_citation": true,
+  "expect_lang": "fr"
+},
+{
+  "id": "devis_002", 
+  "question": "Quels sont les travaux mentionnés dans ce devis?",
+  "expect_refusal": false,
+  "expect_citation": true,
+  "expect_lang": "fr"
+}
 ]

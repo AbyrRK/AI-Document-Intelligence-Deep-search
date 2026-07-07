@@ -63,15 +63,27 @@ class VectorStore:
         if not chunks:
             return 0
 
-        documents = []
-        now = datetime.utcnow().isoformat()
-
-        # Extract all texts for batch embedding
         texts = [chunk["content"] for chunk in chunks]
         
-        # Batch embed with cache
-        print(f"[VectorStore] Embedding {len(texts)} chunks via batch + cache...")
-        embeddings = llm.embed_batch_sync(texts)
+        # Retry with backoff for Gemini 503
+        embeddings = None
+        for attempt in range(4):
+            try:
+                print(f"[VectorStore] Embedding {len(texts)} chunks (attempt {attempt+1})...")
+                embeddings = llm.embed_batch_sync(texts)
+                break
+            except Exception as e:
+                wait = 2 ** attempt  # 1s, 2s, 4s, 8s
+                print(f"[VectorStore] Embedding failed (attempt {attempt+1}): {e}. Retrying in {wait}s...")
+                import time
+                time.sleep(wait)
+        
+        if embeddings is None:
+            print("[VectorStore] ❌ All embedding attempts failed. Skipping indexing.")
+            return 0
+
+        documents = []
+        now = datetime.utcnow().isoformat()
 
         for i, chunk in enumerate(chunks):
             metadata = chunk["metadata"].copy()
@@ -79,13 +91,11 @@ class VectorStore:
                 metadata["session_id"] = session_id
             if "created_at" not in metadata:
                 metadata["created_at"] = now
-            
             documents.append(Document(
                 page_content=chunk["content"],
                 metadata=metadata
             ))
 
-        # Add with pre-computed embeddings
         self._add_documents_with_embeddings(documents, embeddings)
         return len(documents)
     

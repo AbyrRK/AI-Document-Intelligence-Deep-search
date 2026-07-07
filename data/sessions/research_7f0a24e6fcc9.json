@@ -1,0 +1,14 @@
+{
+  "session_id": "research_7f0a24e6fcc9",
+  "updated_at": "2026-07-01T22:47:51.126137",
+  "messages": [
+    {
+      "role": "human",
+      "content": "how is batman"
+    },
+    {
+      "role": "ai",
+      "content": "I am specialized in business documents only (invoices, contracts, reports, quotes, financial statements). I cannot help with this question."
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "session_id": "b91709d8-52e9-47c6-bda2-80058008b00b",
+  "updated_at": "2026-06-29T20:34:57.164992",
+  "messages": [
+    {
+      "role": "ai",
+      "content": "Voici un bref résumé des principaux points du document :\n\n*   Il s'agit d'une proposition commerciale ou d'une facture émise par la Société T.P et services.\n*   Les prestations détaillées incluent l'installation de conduites PVC (∅ 250), la construction de regards de visite (∅ 1000), le caillage de route existante et le raccordement au réseau Onas.\n*   Le coût total hors taxes s'élève à 32 600,000, avec une TVA de 19% (6 194,000), portant le montant total toutes taxes comprises à 38 794,000."
+    },
+    {
+      "role": "human",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "ai",
+      "content": "This document is a quote (Devis N° 32) for works related to connecting wastewater pipes (\"Travaux de branchement de conduite d'eaux usée\")."
+    },
+    {
+      "role": "human",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "ai",
+      "content": "This document is a quote (Devis N° 32) for works related to connecting wastewater pipes (\"Travaux de branchement de conduite d'eaux usée\")."
+    },
+    {
+      "role": "human",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "ai",
+      "content": "This document is a quote (Devis N° 32) for works related to connecting wastewater pipes (\"Travaux de branchement de conduite d'eaux usée\")."
+    },
+    {
+      "role": "human",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "ai",
+      "content": "This document is a quote (Devis N° 32) for works related to connecting wastewater pipes (\"Travaux de branchement de conduite d'eaux usée\")."
+    },
+    {
+      "role": "human",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "ai",
+      "content": "This document is a quote (Devis N° 32) for works related to connecting wastewater pipes (\"Travaux de branchement de conduite d'eaux usée\")."
+    },
+    {
+      "role": "human",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "ai",
+      "content": "This document is a quote (Devis N° 32) for works related to connecting wastewater pipes (\"Travaux de branchement de conduite d'eaux usée\")."
+    },
+    {
+      "role": "human",
+      "content": "What is the title of this document?"
+    },
+    {
+      "role": "ai",
+      "content": "The title of this document is \"Devis N° 32\" and it is for \"Travaux de branchement de conduite d'eaux usée\"."
+    },
+    {
+      "role": "human",
+      "content": "Can you give me more details and show me where you found this?"
+    },
+    {
+      "role": "ai",
+      "content": "The title of this document is \"Devis N° 32\" and it is for \"Travaux de branchement de conduite d'eaux usée\".\n\nThis information is found in Excerpt 1:\n\"Devis N° 32\"\n\"Travaux de branchement de conduite d'eaux usée\""
+    },
+    {
+      "role": "human",
+      "content": "What is the exact budget mentioned in the document?"
+    },
+    {
+      "role": "ai",
+      "content": "The exact budget mentioned in the document is 38.794 dinars."
+    },
+    {
+      "role": "human",
+      "content": "What is the total amount due?"
+    },
+    {
+      "role": "ai",
+      "content": "The total amount due is 38.794 dinars."
+    },
+    {
+      "role": "human",
+      "content": "What is the due date or deadline mentioned?"
+    },
+    {
+      "role": "ai",
+      "content": "Not found in document."
+    },
+    {
+      "role": "human",
+      "content": "What company names are mentioned in the document?"
+    },
+    {
+      "role": "ai",
+      "content": "The company names mentioned in the document are Société T.P et services and Onas."
+    },
+    {
+      "role": "human",
+      "content": "What important dates are mentioned in this document?"
+    },
+    {
+      "role": "ai",
+      "content": "The important date mentioned in this document is 12/04/2026."
+    },
+    {
+      "role": "human",
+      "content": "What is the CEO's favorite color?"
+    },
+    {
+      "role": "human",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "human",
+      "content": "Can you give me more details and show me where you found this?"
+    },
+    {
+      "role": "human",
+      "content": "Quel est le sujet principal de ce document ?"
+    },
+    {
+      "role": "human",
+      "content": "ما هو موضوع هذا المستند؟"
+    },
+    {
+      "role": "human",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "human",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "human",
+      "content": "What is the CEO's favorite color?"
+    }
+  ]
+}

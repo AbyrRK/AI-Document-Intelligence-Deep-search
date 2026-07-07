@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Social Media Influencer Contract",
+    "file": "scanned_english1.pdf",
+    "type": "scanned_pdf",
+    "pages": [0],
+    "requires_gemini": false,
+    "threshold": 0.40,
+    "ground_truth": "SOCIAL MEDIA INFLUENCER CONTRACT\n\nI. THE PARTIES. This Social Media Influencer Contract (\"Contract\") made this\n_____, 20___ is by and between:\n\nAdvertiser: _______________, with a mailing address of\n_____________ (\"Advertiser\"), and\n\nInfluencer: _______________, with a mailing address of\n_____________ (\"Influencer\").\n\nThe Advertiser and the Influencer are individually referred to herein as a\n\"Party\" and collectively as the \"Parties.\"\n\nII. COMMENCEMENT AND DURATION. This Agreement is to commence upon\n_____________, 20___. This Contract is for: (check one)\n\n- An Ongoing Term. The terms of the Contract remain in effect until\neither the Advertiser or the Influencer terminates the Contract, giving ___\ndays' notice to the other Party (\"At-Will\"). After termination, the Parties\nshall have no obligations or liabilities to one another.\n\n- A Fixed-Term. The Parties agree to this Contract shall terminate on\n_____________, 20___. After termination, the Parties shall\nhave no obligations or liabilities to one another.\n\nIII. CONTENT REQUIREMENTS. The Influencer shall make social media\npostings for the Advertiser as described: _______________\n_______________.\n\nHereinafter known as the \"Content.\"\n\nThe Content must be original, factual, compliant with the terms and conditions\nof the social media platforms used, compliant with all applicable FTC\nguidelines, and must contain any tags, links, or titles the Advertiser requests\nto be included in the uploaded media.\n\nIV. ADVERTISER APPROVAL. The Influencer shall: (check one)\n\n- Be required to obtain permission from the Advertiser before\npublishing a post.\n\n- Not be required to obtain permission from the Advertiser before\npublishing a post."
+  },
+  {
+    "name": "Scanned PDF VRD",
+    "file": "BP+CCTP LOT VRD.pdf",
+    "type": "scanned_pdf",
+    "pages": [0],
+    "requires_gemini": false,
+    "threshold": 0.25,
+    "ground_truth": "REPUBLIQUE TUNISIENNE\nMINISTERE DE L'EDUCATION\nCONSEIL REGIONAL DE ZAGHOUAN\nDIRECTION REGIONALE DE L'EQUIPEMENT ET DE L'HABITAT\n\nPROJET DE PARACHEVEMENT D'UNE ECOLE\nPREPARATOIRE ET D'UN INTERNAT\nA SMENJA - ZAGHOUAN\n\nDOSSIER D'APPEL D'OFFRES\n\nLOT VRD\n(DECEMBRE 2024)\n\n• BORDEREAU DES PRIX - DETAIL ESTIMATIF\n• CAHIER DES CLAUSES TECHNIQUES PARTICULIERS\n\nSAMED ENGINEERING\nRoute Tunis Km9 El-Sedra BP 166 - 3021 Sfax\n74 210 807  74 223 789  52 502 368 / 95 245 913 / 20 902 368\nsamed.engineering@gmail.com"
+  },
+  {
+    "name": "Arabic Invoice",
+    "file": "facture_arabic.pdf",
+    "type": "scanned_pdf",
+    "pages": [0],
+    "requires_gemini": true,
+    "threshold": 0.70,
+    "ground_truth": "الفاتورة INVo\n\nIMPORT EXPORT\nSOLUTIONS\n\nشركة آفاق للاستيراد\nمنفذ البطحاء مكتب رقم ١٢.\nالرياض ١٢٣١١\nهاتف: ٩٣٥٩٥٣٣١٥٩٩\nفاكس: ٩٣٥٩٧٦٣١٥٩٩\n\nحيث القانونية:\nمحمد عبدالله\nشعار الشباب خلف باسكن روميز\nالرياض المملكة العربية السعودية ٧٩٨١\nهاتف: ٠٥٣٢٢٢٥٥٩٩+\nجوال: ١٥٠٠٣٣٢٥٥٩٩+\n\nالمسؤول\nشركة آفاق للاستيراد\nهاتف: ٩٣٥٩٥٣٣١٥٩٩\nجوال: ٩٣٥٩٧٦٣١٥٩٩\n\nتاريخ الفاتورة ١٤٤٥/٩/٢٠\nتاريخ الاستحقاق ١٤٥/١٠/٢٠\nالمبلغ المستحق ١٢.٥٠٠,٠٠ SAR\n\nالمنتج                الوصف                الكمية    السعر      المبلغ\nجهاز آبل ماك بوك    جهاز آبل ماك بوك ١٨١٨ ويندوز ٧    ١٠٠    ٧.٠٠٠,٠٠ SAR    ٧.٠٠٠,٠٠ SAR\nكمبيوتر LG بتيوم ٣    هاردسك ٥٠٠ ج.رامات ١+١ Gr    ١٠٠    ٥.٠٠٠,٠٠ SAR    ٥.٠٠٠,٠٠ SAR\n\nالمجموع الجزئي:    ١٢.٥٠٠,٠٠ SAR\nالمجموع:            ١٢.٥٠٠,٠٠ SAR\nمدفوعة:             ٠,٠٠ SAR\nالرصيد المستحق:     ١٢.٥٠٠,٠٠ SAR"
+  }
+  
+]

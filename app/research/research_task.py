@@ -19,7 +19,12 @@ from app.services.document_service import ensure_indexed
 from app.core.language import resolve_language
 
 import uuid
+import os
+from langchain_core.tracers.langchain import wait_for_all_tracers
 
+# Force LangSmith init inside Celery worker
+os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
+os.environ.setdefault("LANGCHAIN_PROJECT", "PFE2026")
 
 def _clean_title(question: str, max_len: int = 45) -> str:
     """Create a clean sidebar title from user question."""

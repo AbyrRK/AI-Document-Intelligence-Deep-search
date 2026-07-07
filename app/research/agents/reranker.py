@@ -37,6 +37,7 @@ def reranker_node(state: ResearchState) -> dict:
             "doc_id":      r.get("doc_id", ""),
             "chunk_index": r.get("chunk_index", 0),
             "score":       round(raw_score * weight, 4),
+            "content_type": r.get("content_type", "text"),
         })
 
     for w in web:

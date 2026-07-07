@@ -11,11 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes import documents, chat, research
 from app.services.vector_store import vector_store
+from app.services.pii_scrubber import warmup as pii_warmup
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("🚀 Starting Document AI Assistant")
+
+    # Pre-load spaCy models so first upload has no cold-start delay
+    pii_warmup()
 
     async def ttl_cleanup_loop():
         while True:
@@ -50,7 +54,7 @@ app.add_middleware(
 
 app.include_router(documents.router, prefix="/documents", tags=["Documents"])
 app.include_router(chat.router,      prefix="/chat",      tags=["Chat"])
-app.include_router(research.router,  prefix="/research",  tags=["Research"])  # ← fixed
+app.include_router(research.router,  prefix="/research",  tags=["Research"])
 
 
 @app.get("/health")
