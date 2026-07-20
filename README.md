@@ -305,9 +305,7 @@ Tested end-to-end through both the API directly and the live frontend:
 
 ---
 
-## License
 
-MIT — see [LICENSE](LICENSE)
 
 ---
 
